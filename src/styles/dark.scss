@@ -1,0 +1,1084 @@
+// ===== Dark Theme - Black/White/Gray Only =====
+// Element UI 2.x uses compiled SCSS variables, NOT CSS custom properties.
+// All overrides use !important to beat compiled theme-chalk.
+
+$dark-bg: #1e1e1e;
+$dark-bg-secondary: #1a1a1a;
+$dark-bg-card: #252525;
+$dark-border: #333333;
+$dark-text: #e0e0e0;
+$dark-text-secondary: #888888;
+$dark-hover: #303030;
+
+// -- Body & App --
+body,
+html,
+#app {
+  background-color: $dark-bg !important;
+  color: $dark-text !important;
+}
+
+.app-wrapper {
+  background-color: $dark-bg !important;
+}
+
+.sidebar-container {
+  background-color: $dark-bg-secondary !important;
+}
+
+.main-container {
+  background-color: $dark-bg !important;
+}
+
+.app-container {
+  background-color: $dark-bg !important;
+  color: $dark-text !important;
+}
+
+.el-container,
+.el-main,
+.el-header,
+.el-footer {
+  background-color: $dark-bg !important;
+}
+
+// ===== Element UI 2.x Deep Overrides =====
+
+// -- Input / Textarea --
+.el-input__inner,
+.el-textarea__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  &::placeholder {
+    color: $dark-text-secondary !important;
+  }
+
+  &:focus {
+    border-color: #555 !important;
+  }
+}
+
+.el-input.is-disabled .el-input__inner {
+  background-color: #222 !important;
+  border-color: $dark-border !important;
+  color: #666 !important;
+}
+
+.el-input-group__append,
+.el-input-group__prepend {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-input-number .el-input__inner {
+  background-color: $dark-bg-secondary !important;
+}
+
+// -- Select --
+.el-select-dropdown {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+}
+
+.el-select-dropdown__item {
+  color: $dark-text !important;
+
+  &.hover,
+  &:hover {
+    background-color: $dark-hover !important;
+  }
+
+  &.selected {
+    color: $dark-text !important;
+  }
+
+  &.is-disabled {
+    color: #555 !important;
+  }
+}
+
+.el-select .el-input.is-focus .el-input__inner {
+  border-color: #555 !important;
+}
+
+.el-select .el-input__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-select__caret {
+  color: $dark-text-secondary !important;
+}
+
+// -- Buttons --
+.el-button {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  &:hover,
+  &:focus {
+    background-color: #333 !important;
+    border-color: #555 !important;
+    color: #fff !important;
+  }
+
+  &:active {
+    background-color: #444 !important;
+  }
+}
+
+.el-button--default {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  &:hover,
+  &:focus {
+    background-color: #333 !important;
+    border-color: #555 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button--primary {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+
+  &:hover,
+  &:focus {
+    background-color: #555 !important;
+    border-color: #666 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button--success {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+
+  &:hover,
+  &:focus {
+    background-color: #555 !important;
+    border-color: #666 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button--warning {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+
+  &:hover,
+  &:focus {
+    background-color: #555 !important;
+    border-color: #666 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button--danger {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+
+  &:hover,
+  &:focus {
+    background-color: #555 !important;
+    border-color: #666 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button--info {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+
+  &:hover,
+  &:focus {
+    background-color: #555 !important;
+    border-color: #666 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button--text {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: $dark-text !important;
+
+  &:hover {
+    color: #fff !important;
+  }
+}
+
+.el-button--mini {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-button--small {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-button [class*="el-icon-"] {
+  color: inherit !important;
+}
+
+// -- Button Group --
+.el-button-group .el-button {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  &:hover {
+    background-color: #333 !important;
+    border-color: #555 !important;
+    color: #fff !important;
+  }
+}
+
+.el-button-group .el-button--primary {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+
+  &:first-child {
+    border-right-color: #555 !important;
+  }
+
+  &:last-child {
+    border-left-color: #555 !important;
+  }
+}
+
+// -- Table --
+.el-table {
+  background-color: $dark-bg-card !important;
+  color: $dark-text !important;
+
+  &::before,
+  &::after {
+    background-color: $dark-border !important;
+  }
+
+  th {
+    background-color: $dark-bg-secondary !important;
+    color: $dark-text !important;
+    border-bottom-color: $dark-border !important;
+  }
+
+  td {
+    border-bottom-color: $dark-border !important;
+    color: $dark-text !important;
+  }
+
+  tr {
+    background-color: $dark-bg-card !important;
+
+    &:hover > td,
+    &:hover > td.el-table__cell {
+      background-color: $dark-hover !important;
+    }
+  }
+
+  // empty block
+  .el-table__empty-block {
+    background-color: $dark-bg-card !important;
+  }
+
+  .el-table__empty-text {
+    color: $dark-text-secondary !important;
+  }
+
+  .el-table__body-wrapper {
+    background-color: $dark-bg-card !important;
+  }
+
+  .el-table__header-wrapper {
+    background-color: $dark-bg-secondary !important;
+  }
+
+  // fixed columns shadow
+  .el-table__fixed-right::before,
+  .el-table__fixed::before {
+    background-color: $dark-border !important;
+  }
+
+  &--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background-color: #222 !important;
+  }
+}
+
+.el-table__body-wrapper,
+.el-table__header-wrapper {
+  background-color: $dark-bg-card !important;
+}
+
+.el-table .sort-caret.ascending {
+  border-bottom-color: $dark-text-secondary !important;
+}
+
+.el-table .sort-caret.descending {
+  border-top-color: $dark-text-secondary !important;
+}
+
+.el-table .ascending .sort-caret.ascending {
+  border-bottom-color: $dark-text !important;
+}
+
+.el-table .descending .sort-caret.descending {
+  border-top-color: $dark-text !important;
+}
+
+// -- Card --
+.el-card {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  &__header {
+    border-bottom-color: $dark-border !important;
+    color: $dark-text !important;
+  }
+
+  &__body {
+    color: $dark-text !important;
+  }
+}
+
+// -- Dialog --
+.el-dialog {
+  background-color: $dark-bg-card !important;
+
+  &__header {
+    border-bottom: 1px solid $dark-border !important;
+  }
+
+  &__title {
+    color: $dark-text !important;
+  }
+
+  &__body {
+    color: $dark-text !important;
+  }
+
+  &__footer {
+    border-top: 1px solid $dark-border !important;
+  }
+}
+
+.el-dialog__wrapper .v-modal {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+// -- Drawer --
+.el-drawer {
+  background-color: $dark-bg-card !important;
+
+  &__header {
+    border-bottom: 1px solid $dark-border !important;
+    color: $dark-text !important;
+    background-color: $dark-bg-card !important;
+  }
+
+  &__body {
+    color: $dark-text !important;
+    background-color: $dark-bg-card !important;
+  }
+}
+
+.el-drawer__wrapper {
+  background-color: transparent !important;
+}
+
+// -- Form --
+.el-form-item__label {
+  color: $dark-text !important;
+}
+
+// -- Tabs --
+.el-tabs {
+  &__nav-wrap::after {
+    background-color: $dark-border !important;
+  }
+
+  &__item {
+    color: $dark-text-secondary !important;
+
+    &:hover {
+      color: $dark-text !important;
+    }
+
+    &.is-active {
+      color: $dark-text !important;
+    }
+  }
+
+  &__active-bar {
+    background-color: $dark-text !important;
+  }
+}
+
+.el-tabs--border-card {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+
+  & > .el-tabs__header {
+    background-color: $dark-bg-secondary !important;
+    border-bottom-color: $dark-border !important;
+  }
+
+  & > .el-tabs__header .el-tabs__item {
+    color: $dark-text-secondary !important;
+    border-color: transparent !important;
+
+    &.is-active {
+      background-color: $dark-bg-card !important;
+      color: $dark-text !important;
+      border-right-color: $dark-border !important;
+      border-left-color: $dark-border !important;
+    }
+  }
+}
+
+// -- Tag --
+.el-tag {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  .el-tag__close {
+    color: $dark-text-secondary !important;
+
+    &:hover {
+      background-color: #444 !important;
+      color: #fff !important;
+    }
+  }
+}
+
+.el-tag--dark {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+}
+
+// -- Pagination --
+.el-pagination {
+  color: $dark-text !important;
+
+  button {
+    background-color: $dark-bg-secondary !important;
+    color: $dark-text !important;
+
+    &:disabled {
+      color: #555 !important;
+    }
+  }
+}
+
+.el-pager li {
+  background-color: $dark-bg-secondary !important;
+  color: $dark-text !important;
+
+  &:hover {
+    color: $dark-text !important;
+  }
+
+  &.is-active {
+    color: #fff !important;
+  }
+}
+
+.el-pagination__total {
+  color: $dark-text-secondary !important;
+}
+
+.el-pagination__jump {
+  color: $dark-text-secondary !important;
+}
+
+.el-pagination .el-select .el-input .el-input__inner {
+  background-color: $dark-bg-secondary !important;
+  color: $dark-text !important;
+}
+
+// -- Dropdown --
+.el-dropdown-menu {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+
+  &__item {
+    color: $dark-text !important;
+
+    &:hover {
+      background-color: $dark-hover !important;
+      color: $dark-text !important;
+    }
+
+    &--divided {
+      border-top-color: $dark-border !important;
+    }
+
+    &.is-disabled {
+      color: #555 !important;
+    }
+  }
+}
+
+// -- Message Box --
+.el-message-box {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+
+  &__title {
+    color: $dark-text !important;
+  }
+
+  &__content {
+    color: $dark-text !important;
+  }
+
+  &__input .el-input__inner {
+    background-color: $dark-bg-secondary !important;
+    border-color: $dark-border !important;
+    color: $dark-text !important;
+  }
+
+  &__headerbtn .el-message-box__close {
+    color: $dark-text-secondary !important;
+  }
+
+  &__headerbtn:focus .el-message-box__close,
+  &__headerbtn:hover .el-message-box__close {
+    color: $dark-text !important;
+  }
+
+  &__message p {
+    color: $dark-text !important;
+  }
+
+  &__btns .el-button--primary {
+    background-color: #444 !important;
+    border-color: #555 !important;
+    color: #fff !important;
+  }
+
+  &__btns .el-button--default {
+    background-color: $dark-bg-secondary !important;
+    border-color: $dark-border !important;
+    color: $dark-text !important;
+  }
+}
+
+// -- Popover / Tooltip --
+.el-popover,
+.el-tooltip__popper {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-popover--plain {
+  background-color: $dark-bg-card !important;
+}
+
+// -- Breadcrumb --
+.el-breadcrumb__inner,
+.el-breadcrumb__inner a {
+  color: $dark-text-secondary !important;
+
+  &:hover {
+    color: $dark-text !important;
+  }
+}
+
+.el-breadcrumb__separator {
+  color: $dark-text-secondary !important;
+}
+
+// -- Scrollbar --
+.el-scrollbar__thumb {
+  background-color: $dark-border !important;
+
+  &:hover {
+    background-color: $dark-text-secondary !important;
+  }
+}
+
+.el-scrollbar__bar {
+  opacity: 1 !important;
+}
+
+// -- Checkbox & Radio --
+.el-checkbox__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #555 !important;
+  border-color: #666 !important;
+}
+
+.el-checkbox__input.is-focus .el-checkbox__inner {
+  border-color: #555 !important;
+}
+
+.el-checkbox__label {
+  color: $dark-text !important;
+}
+
+.el-radio__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background-color: #555 !important;
+  border-color: #666 !important;
+}
+
+.el-radio__input.is-focus .el-radio__inner {
+  border-color: #555 !important;
+}
+
+.el-radio__label {
+  color: $dark-text !important;
+}
+
+// -- Switch --
+.el-switch.is-checked .el-switch__core {
+  background-color: #555 !important;
+  border-color: #666 !important;
+}
+
+.el-switch .el-switch__core {
+  background-color: #333 !important;
+  border-color: #444 !important;
+}
+
+.el-switch__label {
+  color: $dark-text-secondary !important;
+}
+
+// -- Divider --
+.el-divider {
+  background-color: $dark-border !important;
+
+  &__text {
+    background-color: $dark-bg-card !important;
+    color: $dark-text-secondary !important;
+  }
+}
+
+// -- Loading --
+.el-loading-mask {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.el-loading-spinner {
+  .el-loading-text {
+    color: $dark-text-secondary !important;
+  }
+
+  .circular .path {
+    stroke: $dark-text-secondary !important;
+  }
+}
+
+// -- Slider --
+.el-slider__runway {
+  background-color: $dark-border !important;
+}
+
+.el-slider__bar {
+  background-color: #555 !important;
+}
+
+.el-slider__button {
+  border-color: #666 !important;
+  background-color: $dark-text !important;
+}
+
+// -- Upload --
+.el-upload-dragger {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+
+  &:hover {
+    border-color: #555 !important;
+  }
+}
+
+.el-upload {
+  color: $dark-text !important;
+}
+
+.el-upload-list__item {
+  color: $dark-text !important;
+
+  &:hover {
+    background-color: $dark-hover !important;
+  }
+
+  .el-icon-close-tip {
+    color: $dark-text-secondary !important;
+  }
+}
+
+.el-upload-list__item-name {
+  color: $dark-text !important;
+
+  &:hover {
+    color: $dark-text !important;
+  }
+}
+
+// -- Steps --
+.el-step__title {
+  color: $dark-text-secondary !important;
+
+  &.is-process {
+    color: $dark-text !important;
+  }
+
+  &.is-finish {
+    color: $dark-text !important;
+  }
+}
+
+.el-step__description {
+  color: $dark-text-secondary !important;
+}
+
+// -- Timeline --
+.el-timeline-item__content {
+  color: $dark-text !important;
+}
+
+.el-timeline-item__timestamp {
+  color: $dark-text-secondary !important;
+}
+
+// -- Badge --
+.el-badge__content {
+  background-color: #555 !important;
+}
+
+// -- Progress --
+.el-progress-bar__outer {
+  background-color: $dark-border !important;
+}
+
+.el-progress-bar__inner {
+  background-color: #555 !important;
+}
+
+// -- Color Picker --
+.el-color-picker__panel {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+}
+
+// -- Tree --
+.el-tree {
+  background-color: $dark-bg-card !important;
+  color: $dark-text !important;
+
+  &-node__content:hover {
+    background-color: $dark-hover !important;
+  }
+
+  &-node.is-current > .el-tree-node__content {
+    background-color: $dark-hover !important;
+  }
+
+  &__empty-text {
+    color: $dark-text-secondary !important;
+  }
+}
+
+// -- Transfer --
+.el-transfer-panel {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+}
+
+.el-transfer-panel__header {
+  background-color: $dark-bg-secondary !important;
+  border-bottom-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-transfer-panel__body {
+  background-color: $dark-bg-card !important;
+}
+
+.el-transfer-panel__item {
+  color: $dark-text !important;
+
+  &:hover {
+    color: $dark-text !important;
+  }
+}
+
+.el-transfer-panel__filter .el-input__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+// -- Radio Button --
+.el-radio-button__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+  box-shadow: none !important;
+
+  &:hover {
+    color: #fff !important;
+  }
+}
+
+.el-radio-button__orig-radio:checked + .el-radio-button__inner {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+  box-shadow: -1px 0 0 0 #555 !important;
+}
+
+.el-radio-button__orig-radio:focus + .el-radio-button__inner {
+  color: #fff !important;
+}
+
+// -- Checkbox Button --
+.el-checkbox-button__inner {
+  background-color: $dark-bg-secondary !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+}
+
+.el-checkbox-button.is-checked .el-checkbox-button__inner {
+  background-color: #444 !important;
+  border-color: #555 !important;
+  color: #fff !important;
+}
+
+// -- Menu --
+.el-menu-item,
+.el-submenu__title {
+  color: $dark-text !important;
+
+  &:hover {
+    background-color: $dark-hover !important;
+  }
+
+  &.is-active {
+    color: #fff !important;
+  }
+}
+
+.el-submenu .el-menu {
+  background-color: $dark-bg-secondary !important;
+}
+
+.el-submenu .el-menu .el-menu-item {
+  background-color: $dark-bg-secondary !important;
+}
+
+.el-menu-item [class^="el-icon-"] {
+  color: inherit !important;
+}
+
+// -- Alert --
+.el-alert {
+  background-color: $dark-bg-card !important;
+
+  &__title {
+    color: $dark-text !important;
+  }
+
+  &__description {
+    color: $dark-text-secondary !important;
+  }
+}
+
+// -- Notification --
+.el-notification {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+
+  .el-notification__title {
+    color: $dark-text !important;
+  }
+
+  .el-notification__content {
+    color: $dark-text-secondary !important;
+  }
+
+  .el-notification__closeBtn {
+    color: $dark-text-secondary !important;
+  }
+}
+
+// -- Message --
+.el-message {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+
+  .el-message__content {
+    color: $dark-text !important;
+  }
+}
+
+// -- Date Picker --
+.el-date-picker {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+}
+
+.el-picker-panel {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+  color: $dark-text !important;
+
+  &__body {
+    color: $dark-text !important;
+  }
+
+  &__content .el-date-table td {
+    color: $dark-text !important;
+
+    &.today span {
+      color: $dark-text !important;
+    }
+
+    &.current:not(.disabled) span {
+      background-color: #555 !important;
+      color: #fff !important;
+    }
+
+    &:hover span {
+      background-color: $dark-hover !important;
+    }
+  }
+
+  &__header {
+    border-bottom-color: $dark-border !important;
+  }
+
+  &__icon-btn {
+    color: $dark-text-secondary !important;
+
+    &:hover {
+      color: $dark-text !important;
+    }
+  }
+
+  .el-month-table td .cell {
+    color: $dark-text !important;
+  }
+
+  .el-year-table td .cell {
+    color: $dark-text !important;
+  }
+}
+
+.el-date-table td span {
+  color: $dark-text !important;
+}
+
+.el-date-editor .el-range-input {
+  background-color: transparent !important;
+  color: $dark-text !important;
+}
+
+.el-date-editor .el-range-separator {
+  color: $dark-text-secondary !important;
+}
+
+.el-date-editor .el-range__icon {
+  color: $dark-text-secondary !important;
+}
+
+// -- Time Picker --
+.el-time-panel {
+  background-color: $dark-bg-card !important;
+  border-color: $dark-border !important;
+}
+
+.el-time-panel__content::after,
+.el-time-panel__content::before {
+  border-color: $dark-border !important;
+}
+
+.el-time-spinner__item {
+  color: $dark-text !important;
+
+  &:hover:not(.is-disabled):not(.active) {
+    background-color: $dark-hover !important;
+  }
+
+  &.active:not(.is-disabled) {
+    color: #fff !important;
+  }
+}
+
+.el-time-panel__footer {
+  border-top-color: $dark-border !important;
+}
+
+// -- Scrollbar global --
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: $dark-bg-secondary !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $dark-border !important;
+  border-radius: 3px;
+
+  &:hover {
+    background: $dark-text-secondary !important;
+  }
+}
+
+::selection {
+  background-color: #444 !important;
+  color: #fff !important;
+}
+
+// -- NProgress override --
+#nprogress .bar {
+  background: #555 !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #555, 0 0 5px #555 !important;
+}
+
+// -- Fix white backgrounds for inline elements --
+a {
+  color: inherit !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: $dark-text !important;
+}

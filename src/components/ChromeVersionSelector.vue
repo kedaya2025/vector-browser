@@ -29,7 +29,7 @@
       <el-progress
         :percentage="downloadProgress"
         :status="downloadStatus === 'failed' ? 'exception' : ''"
-        :color="downloadStatus === 'failed' ? '#f56c6c' : '#67c23a'"
+        :color="downloadStatus === 'failed' ? '#f56c6c' : '#00FF38'"
         :stroke-width="10"
         :text-inside="true"
         style="flex: 1; margin-left: 12px"
@@ -138,52 +138,54 @@ export default {
 </style>
 
 <style lang="scss">
-.chrome-version-dropdown {
-  background: #1a1a1a;
-  border: 1px solid #67c23a;
+.el-select-dropdown.chrome-version-dropdown {
+  background: #1a1a1a !important;
+  border: 1px solid #00FF38 !important;
 
   .el-select-dropdown__item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 36px;
-    line-height: 36px;
-    color: #e0e0e0;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    color: #e0e0e0 !important;
+    background: #1a1a1a !important;
 
     &.hover, &:hover {
-      background: #2a2a2a;
+      background: #2a2a2a !important;
     }
 
     &.selected {
-      color: #67c23a;
+      color: #00FF38 !important;
       font-weight: bold;
     }
 
     &.is-disabled {
-      color: #e0e0e0;
+      color: #e0e0e0 !important;
+      background: #1a1a1a !important;
     }
   }
 
   .tag-ok {
     font-size: 12px;
-    color: #67c23a;
+    color: #00FF38 !important;
   }
 
   .tag-dl {
     font-size: 12px;
-    color: #67c23a;
+    color: #00FF38 !important;
     cursor: pointer;
 
     &:hover {
-      color: #85ce61;
+      color: #00cc2e !important;
     }
   }
 
   .popper__arrow {
-    border-bottom-color: #67c23a;
+    border-bottom-color: #00FF38 !important;
 
     &::after {
-      border-bottom-color: #1a1a1a;
+      border-bottom-color: #1a1a1a !important;
     }
   }
 }

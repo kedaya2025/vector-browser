@@ -1,6 +1,6 @@
 # Vector Browser
 
-[![Build & Release](https://github.com/your-username/vector-browser/actions/workflows/build.yml/badge.svg)](https://github.com/your-username/vector-browser/actions/workflows/build.yml)
+[![Build & Release](https://github.com/kedaya2025/vector-browser/actions/workflows/build.yml/badge.svg)](https://github.com/kedaya2025/vector-browser/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)]()
 [![Electron](https://img.shields.io/badge/Electron-33-purple.svg)]()
@@ -49,7 +49,7 @@ Vector Browser is a Chromium-based browser environment management tool. It enabl
 #### Installation
 
 ```bash
-git clone https://github.com/your-username/vector-browser.git
+git clone https://github.com/kedaya2025/vector-browser.git
 cd vector-browser
 npm install
 ```
@@ -194,7 +194,7 @@ Vector Browser 是一款基于 Chromium 的浏览器环境管理工具，支持�
 #### 安装
 
 ```bash
-git clone https://github.com/your-username/vector-browser.git
+git clone https://github.com/kedaya2025/vector-browser.git
 cd vector-browser
 npm install
 ```

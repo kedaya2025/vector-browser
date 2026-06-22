@@ -88,6 +88,15 @@ export default {
       const ret = await chromeSend('getChromeVersions').catch(() => ({ data: [] }))
       this.versions = ret?.data || []
       this.loading = false
+
+      if (!this.selectedVersion && this.versions.length > 0) {
+        const downloaded = this.versions.find(v => v.downloaded)
+        if (downloaded) {
+          this.selectedVersion = downloaded.version
+          this.$emit('input', downloaded.version)
+          this.$emit('change', downloaded.version)
+        }
+      }
     },
     listenDownloadProgress() {
       window.electronAPI.onChromeDownloadProgress?.(data => {

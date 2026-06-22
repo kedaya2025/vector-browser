@@ -1023,8 +1023,8 @@ export default {
     window.electronAPI.onBrowserClosed?.(id => {
       const item = (this.list || []).find(b => b.id === Number(id) || b.id === id)
       if (item) {
-        item.isRunning = false
-        item.runLoading = false
+        this.$set(item, 'isRunning', false)
+        this.$set(item, 'runLoading', false)
       }
     })
 

@@ -553,8 +553,8 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
       args.push(`--user-agent=${profile.userAgent}`)
     }
 
-    if (profile.language) {
-      const lang = String(profile.language).split(',')[0].trim()
+    if (profile['ua-language'] && profile['ua-language'].value) {
+      const lang = String(profile['ua-language'].value).split(',')[0].trim()
       if (lang) {
         args.push(`--lang=${lang}`)
       }

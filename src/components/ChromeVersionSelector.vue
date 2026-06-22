@@ -141,6 +141,12 @@ export default {
 .el-select-dropdown.chrome-version-dropdown {
   background: #1a1a1a !important;
   border: 1px solid #00FF38 !important;
+  border-radius: 4px !important;
+  overflow: visible !important;
+
+  .el-select-dropdown__list {
+    padding: 4px 0 !important;
+  }
 
   .el-select-dropdown__item {
     display: flex !important;
@@ -148,8 +154,10 @@ export default {
     align-items: center !important;
     height: 36px !important;
     line-height: 36px !important;
-    color: #e0e0e0 !important;
+    color: #ffffff !important;
     background: #1a1a1a !important;
+    margin: 0 !important;
+    padding: 0 20px !important;
 
     &.hover, &:hover {
       background: #2a2a2a !important;
@@ -161,8 +169,13 @@ export default {
     }
 
     &.is-disabled {
-      color: #e0e0e0 !important;
+      color: #666666 !important;
       background: #1a1a1a !important;
+      cursor: default !important;
+
+      &:hover {
+        background: #1a1a1a !important;
+      }
     }
   }
 
@@ -182,11 +195,7 @@ export default {
   }
 
   .popper__arrow {
-    border-bottom-color: #00FF38 !important;
-
-    &::after {
-      border-bottom-color: #1a1a1a !important;
-    }
+    display: none !important;
   }
 }
 </style>

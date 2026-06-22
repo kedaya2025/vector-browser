@@ -171,6 +171,33 @@ html,
   }
 }
 
+// 启动按钮特殊样式：未启动=绿色，运行中=红色
+.status-col .el-button--success {
+  background-color: #1a472a !important;
+  border-color: #2d6a4f !important;
+  color: #4ade80 !important;
+
+  &:hover,
+  &:focus {
+    background-color: #2d6a4f !important;
+    border-color: #40916c !important;
+    color: #86efac !important;
+  }
+}
+
+.status-col .el-button--danger {
+  background-color: #4a1c1c !important;
+  border-color: #7f1d1d !important;
+  color: #fca5a5 !important;
+
+  &:hover,
+  &:focus {
+    background-color: #7f1d1d !important;
+    border-color: #991b1b !important;
+    color: #fecaca !important;
+  }
+}
+
 .el-button--warning {
   background-color: #444 !important;
   border-color: #555 !important;
@@ -286,6 +313,22 @@ html,
 
   tr {
     background-color: $dark-bg-card !important;
+
+    &:hover > td,
+    &:hover > td.el-table__cell {
+      background-color: $dark-hover !important;
+    }
+  }
+
+  // 强制覆盖所有行和单元格背景
+  .el-table__body tr {
+    background-color: $dark-bg-card !important;
+
+    > td,
+    > td.el-table__cell {
+      background-color: $dark-bg-card !important;
+      color: $dark-text !important;
+    }
 
     &:hover > td,
     &:hover > td.el-table__cell {

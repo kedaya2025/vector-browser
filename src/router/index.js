@@ -39,6 +39,19 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/settings',
+    component: Layout,
+    meta: { title: '全局设置', icon: 'setting' },
+    children: [
+      {
+        path: '',
+        component: require('@/views/settings/index').default,
+        name: 'Settings',
+        meta: { title: '全局设置', icon: 'setting', affix: true }
+      }
+    ]
+  },
+  {
     path: '/extensions',
     component: Layout,
     meta: { title: '插件管理', icon: 'component' },

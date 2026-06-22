@@ -33,6 +33,12 @@ export async function chromeSendTimeout(name, timeout = 2000, ...params) {
     getGlobalData: () => api.getGlobalData(),
     setGlobalData: (jsonStr) => api.setGlobalData(jsonStr),
     checkProxy: (url) => api.checkProxy(url),
+    getGroupList: () => api.getGroupList(),
+    setGroupList: (data) => api.setGroupList(data),
+    getExtensions: () => api.getExtensions(),
+    installExtension: (data) => api.installExtension(data),
+    uninstallExtension: (extId) => api.uninstallExtension(extId),
+    toggleExtension: (extId) => api.toggleExtension(extId),
   }
 
   console.log(`chrome.send("${name}", `, args, `)`)
@@ -128,8 +134,9 @@ export async function deleteBrowser(id) {
 }
 
 export async function updateRuningState() {
-  const runingIds = await chromeSend('getRuningBrowser').catch(() => {})
-  window._updateState && window._updateState(runingIds || [])
+  const runingIds = await chromeSend('getRuningBrowser').catch(() => [])
+  const idStrs = (runingIds || []).map(id => String(id))
+  window._updateState && window._updateState(idStrs)
 }
 
 export async function getBrowserVersion() {
@@ -140,7 +147,8 @@ export async function getBrowserVersion() {
 export async function getGroupList() {
   let list
   try {
-    list = JSON.parse(localStorage.getItem('group'))
+    const ret = await chromeSend('getGroupList')
+    list = ret.data
   } catch {
     //
   }
@@ -157,6 +165,7 @@ export async function addGroup(item, defaultName) {
   list.push(item)
 
   localStorage.setItem('group', JSON.stringify(list))
+  await chromeSend('setGroupList', list).catch(console.warn)
 }
 
 export async function updateGroup(item) {
@@ -165,6 +174,7 @@ export async function updateGroup(item) {
   list[idx] = item
 
   localStorage.setItem('group', JSON.stringify(list))
+  await chromeSend('setGroupList', list).catch(console.warn)
 }
 
 export async function deleteGroup(id) {
@@ -174,4 +184,5 @@ export async function deleteGroup(id) {
   list.splice(idx, 1)
 
   localStorage.setItem('group', JSON.stringify(list))
+  await chromeSend('setGroupList', list).catch(console.warn)
 }

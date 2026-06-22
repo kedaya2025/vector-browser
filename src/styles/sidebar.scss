@@ -80,6 +80,13 @@
       color: $subMenuActiveText !important;
     }
 
+    // 当前激活菜单项高亮
+    .el-menu-item.is-active {
+      background-color: #2a2a2a !important;
+      color: #fff !important;
+      border-right: 3px solid #fff;
+    }
+
     & .nest-menu .el-submenu>.el-submenu__title,
     & .el-submenu .el-menu-item {
       min-width: $sideBarWidth !important;

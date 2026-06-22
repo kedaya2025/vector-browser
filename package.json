@@ -14,35 +14,58 @@
     "svgo": "svgo -f src/icons/svg --config=src/icons/svgo.yml",
     "electron:dev": "concurrently \"vue-cli-service serve\" \"wait-on http://localhost:9527 && electron .\"",
     "electron:build": "npm run build && electron-builder --dir",
-    "electron:build:portable": "npm run build && electron-builder --win portable"
+    "electron:build:portable": "npm run build && electron-builder --win portable",
+    "fix:icons": "node scripts/fix-icons.js",
+    "dist": "npm run build && electron-builder --win nsis && node scripts/fix-icons.js"
   },
   "build": {
-    "appId": "com.virtualbrowser.app",
+    "appId": "com.io-browser.app",
     "productName": "IOBrowser",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "static/**/*"
     ],
-    "extraResources": [],
+    "extraResources": [
+      {
+        "from": "static/logo.ico",
+        "to": "logo.ico"
+      }
+    ],
+    "afterPack": "./scripts/after-pack.js",
     "win": {
+      "icon": "static/logo.ico",
       "target": [
         {
-          "target": "dir",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ],
-      "sign": false
+      "sign": false,
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "IO Browser",
+      "installerIcon": "static/logo.ico",
+      "uninstallerIcon": "static/logo.ico",
+      "installerHeaderIcon": "static/logo.ico"
     },
     "portable": {
-      "artifactName": "VirtualBrowser-${version}-portable.exe"
+      "artifactName": "IOBrowser-${version}-portable.exe"
     }
   },
   "dependencies": {
+    "adm-zip": "^0.5.17",
     "axios": "^1.3.4",
     "clipboard": "^2.0.11",
     "compare-versions": "^6.1.0",
@@ -87,6 +110,7 @@
     "mockjs": "1.0.1-beta3",
     "plop": "2.3.0",
     "prettier": "^2.8.8",
+    "rcedit": "^5.0.2",
     "runjs": "4.3.2",
     "sass": "1.26.2",
     "sass-loader": "8.0.2",

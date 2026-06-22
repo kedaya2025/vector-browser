@@ -6,41 +6,40 @@
       :placeholder="loading ? '加载中...' : '选择 Chrome 版本'"
       :loading="loading"
       style="width: 100%"
+      popper-class="chrome-version-dropdown"
       @change="handleChange"
     >
-      <el-option-group label="已下载">
-        <el-option
-          v-for="item in downloadedVersions"
-          :key="item.version"
-          :value="item.version"
-          :label="item.version"
+      <div class="version-group-header">已下载</div>
+      <el-option
+        v-for="item in downloadedVersions"
+        :key="item.version"
+        :value="item.version"
+        :label="item.version"
+      >
+        <span>{{ item.version }}</span>
+        <span class="tag-downloaded">已下载</span>
+      </el-option>
+      <div v-if="downloadedVersions.length === 0" class="version-empty">暂无</div>
+
+      <div class="version-group-header">未下载</div>
+      <el-option
+        v-for="item in undownloadedVersions"
+        :key="item.version"
+        :value="item.version"
+        :label="item.version"
+        disabled
+      >
+        <span>{{ item.version }}</span>
+        <span
+          class="tag-download"
+          @click.stop="handleDownload(item)"
         >
-          <span style="float: left">{{ item.version }}</span>
-          <span style="float: right; color: #67c23a; font-size: 12px">已下载</span>
-        </el-option>
-      </el-option-group>
-      <el-option-group label="未下载">
-        <el-option
-          v-for="item in undownloadedVersions"
-          :key="item.version"
-          :value="item.version"
-          :label="item.version"
-          disabled
-        >
-          <span style="float: left">{{ item.version }}</span>
-          <el-button
-            type="text"
-            size="mini"
-            style="float: right"
-            @click.stop="handleDownload(item)"
-          >
-            <span v-if="downloadingVersion === item.version" style="color: #e6a23c">
-              {{ downloadProgress }}%
-            </span>
-            <span v-else style="color: #409eff">下载</span>
-          </el-button>
-        </el-option>
-      </el-option-group>
+          <template v-if="downloadingVersion === item.version">
+            {{ downloadProgress }}%
+          </template>
+          <template v-else>下载</template>
+        </span>
+      </el-option>
     </el-select>
 
     <div v-if="downloadingVersion" class="download-bar">
@@ -153,5 +152,53 @@ export default {
   border-radius: 4px;
   font-size: 12px;
   color: #e0e0e0;
+}
+</style>
+
+<style lang="scss">
+.chrome-version-dropdown {
+  .version-group-header {
+    padding: 8px 20px 4px;
+    font-size: 12px;
+    color: #909399;
+    font-weight: bold;
+  }
+
+  .version-empty {
+    padding: 6px 20px;
+    font-size: 12px;
+    color: #c0c4cc;
+  }
+
+  .el-select-dropdown__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 36px;
+    line-height: 36px;
+
+    &.is-disabled {
+      cursor: default;
+      opacity: 1;
+    }
+  }
+
+  .tag-downloaded {
+    font-size: 12px;
+    color: #67c23a;
+    white-space: nowrap;
+  }
+
+  .tag-download {
+    font-size: 12px;
+    color: #409eff;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover {
+      color: #66b1ff;
+    }
+  }
 }
 </style>

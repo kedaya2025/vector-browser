@@ -20,15 +20,10 @@ const GLOBAL_DATA_FILE = path.join(DATA_DIR, 'globalData.json')
 const EXTENSIONS_FILE = path.join(DATA_DIR, 'extensions.json')
 const EXTENSIONS_DIR = path.join(DATA_DIR, 'extensions')
 
-// 浏览器引擎根目录：browser 文件夹
+// 浏览器引擎根目录：browser 文件夹（统一目录）
 const BROWSER_ENGINES_DIR = isDev
   ? path.join(__dirname, '..', '..', '..', 'browser')
   : path.join(path.dirname(app.getPath('exe')), 'browser')
-
-// Chrome for Testing 下载目录
-const CHROME_ENGINES_DIR = isDev
-  ? path.join(__dirname, '..', '..', '..', 'chrome-engines')
-  : path.join(path.dirname(app.getPath('exe')), 'chrome-engines')
 
 const CHROME_VERSIONS_CACHE_FILE = path.join(DATA_DIR, 'chrome-versions-cache.json')
 
@@ -287,7 +282,7 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
   let chromeExe = null
   if (profile) {
     // 优先查找 chrome-engines 目录（按版本号）
-    const versionDir = path.join(CHROME_ENGINES_DIR, profile.chrome_version || '')
+    const versionDir = path.join(BROWSER_ENGINES_DIR, profile.chrome_version || '')
     if (fs.existsSync(versionDir)) {
       const exe = path.join(versionDir, 'chrome.exe')
       if (fs.existsSync(exe)) chromeExe = exe
@@ -305,11 +300,11 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
   }
 
   // 如果还没找到，在 chrome-engines 目录中查找第一个可用的
-  if (!chromeExe && fs.existsSync(CHROME_ENGINES_DIR)) {
-    const entries = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+  if (!chromeExe && fs.existsSync(BROWSER_ENGINES_DIR)) {
+    const entries = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
     for (const entry of entries) {
       if (!entry.isDirectory()) continue
-      const exe = path.join(CHROME_ENGINES_DIR, entry.name, 'chrome.exe')
+      const exe = path.join(BROWSER_ENGINES_DIR, entry.name, 'chrome.exe')
       if (fs.existsSync(exe)) {
         chromeExe = exe
         break
@@ -566,10 +561,10 @@ ipcMain.handle('getChromeVersions', async () => {
     console.log('[ChromeVersions] 获取到版本数:', versions.length)
 
     // 检查哪些已下载
-    ensureDir(CHROME_ENGINES_DIR)
+    ensureDir(BROWSER_ENGINES_DIR)
     let downloadedDirs = []
     try {
-      downloadedDirs = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+      downloadedDirs = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
         .filter(d => d.isDirectory())
         .map(d => d.name)
     } catch {}
@@ -593,12 +588,12 @@ ipcMain.handle('getChromeVersions', async () => {
 // 获取已下载的 Chrome 引擎列表
 ipcMain.handle('getDownloadedChromeEngines', async () => {
   try {
-    ensureDir(CHROME_ENGINES_DIR)
-    const entries = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+    ensureDir(BROWSER_ENGINES_DIR)
+    const entries = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
     const engines = []
     for (const entry of entries) {
       if (!entry.isDirectory()) continue
-      const engineDir = path.join(CHROME_ENGINES_DIR, entry.name)
+      const engineDir = path.join(BROWSER_ENGINES_DIR, entry.name)
       const hasChrome = fs.existsSync(path.join(engineDir, 'chrome.exe'))
       const hasCamoufox = fs.existsSync(path.join(engineDir, 'camoufox.exe'))
       if (hasChrome || hasCamoufox) {
@@ -621,12 +616,12 @@ ipcMain.handle('downloadChromeEngine', async (event, { version, downloadUrl }) =
     return { success: false, error: '正在下载中' }
   }
 
-  const targetDir = path.join(CHROME_ENGINES_DIR, version)
-  const tempDir = path.join(CHROME_ENGINES_DIR, `_temp_${version}`)
-  const zipFile = path.join(CHROME_ENGINES_DIR, `_temp_${version}.zip`)
+  const targetDir = path.join(BROWSER_ENGINES_DIR, version)
+  const tempDir = path.join(BROWSER_ENGINES_DIR, `_temp_${version}`)
+  const zipFile = path.join(BROWSER_ENGINES_DIR, `_temp_${version}.zip`)
 
   try {
-    ensureDir(CHROME_ENGINES_DIR)
+    ensureDir(BROWSER_ENGINES_DIR)
     ensureDir(tempDir)
 
     const abortController = { aborted: false }
@@ -775,7 +770,7 @@ ipcMain.handle('cancelChromeDownload', async (event, version) => {
 // 删除已下载的 Chrome 引擎
 ipcMain.handle('deleteChromeEngine', async (event, version) => {
   try {
-    const targetDir = path.join(CHROME_ENGINES_DIR, version)
+    const targetDir = path.join(BROWSER_ENGINES_DIR, version)
     if (fs.existsSync(targetDir)) {
       fs.rmSync(targetDir, { recursive: true, force: true })
     }

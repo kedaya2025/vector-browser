@@ -7,7 +7,6 @@ build/
 
 # Browser engines (large binaries downloaded separately)
 /browser/
-/chrome-engines/
 
 # Runtime data
 data/

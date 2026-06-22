@@ -90,14 +90,13 @@
       </el-table-column>
       <el-table-column :label="$t('group.group')" min-width="50px">
         <template slot-scope="{ row }">
-          <el-tooltip class="item" effect="dark" content="点击编辑分组" placement="top">
-            <el-button type="text" @click="handleEditGroup(row)">
-              {{ row.group }}
-            </el-button>
-          </el-tooltip>
+          <span
+            class="group-text"
+            @click="handleEditGroup(row)"
+          >{{ row.group }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="IP" width="240px">
+      <el-table-column label="IP" width="200px">
         <template slot-scope="{ row }">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <span>
@@ -107,15 +106,16 @@
               </span>
               <span v-else style="color: #666">未查询</span>
             </span>
-            <el-button
-              type="text"
-              size="mini"
-              :loading="row.ipLoading"
+            <i
+              v-if="!row.ipLoading"
+              class="el-icon-refresh ip-refresh-icon"
               @click="handleRefreshIp(row)"
+            />
+            <i
+              v-else
+              class="el-icon-loading"
               style="color: #00FF38; font-size: 14px;"
-            >
-              <i v-if="!row.ipLoading" class="el-icon-refresh" />
-            </el-button>
+            />
           </div>
         </template>
       </el-table-column>
@@ -136,17 +136,19 @@
           <el-button
             :type="row.isRunning ? 'success' : 'primary'"
             :icon="row.isRunning ? '' : 'el-icon-video-play'"
-            :loading="row.runLoading"
-            :disabled="row.isRunning"
+            :loading="row.runLoading || downloadingVersion === row.chrome_version"
+            :disabled="row.isRunning || downloadingVersion === row.chrome_version"
             :class="{ 'btn-running': row.isRunning }"
             @click="handleLaunch(row)"
           >
             {{
               row.runLoading
                 ? $t('browser.launching')
-                : row.isRunning
-                  ? '运行中'
-                  : $t('browser.launch')
+                : downloadingVersion === row.chrome_version
+                  ? '正在下载'
+                  : row.isRunning
+                    ? '运行中'
+                    : $t('browser.launch')
             }}
           </el-button>
         </template>
@@ -787,6 +789,7 @@ export default {
       callback()
     }
     return {
+      downloadingVersion: null,
       currentEditingRow: null,
       dialogBatchSetGroupVisible: false,
       selectedGroup: '默认分组',
@@ -1022,6 +1025,26 @@ export default {
       if (item) {
         item.isRunning = false
         item.runLoading = false
+      }
+    })
+
+    // 监听 Chrome 引擎下载进度
+    window.electronAPI.onChromeDownloadProgress?.(data => {
+      if (data.status === 'completed') {
+        this.downloadingVersion = null
+        if (this._autoLaunchRow) {
+          const row = this._autoLaunchRow
+          this._autoLaunchRow = null
+          this.$nextTick(() => {
+            this.$message.success(`Chrome ${data.version} 下载完成，正在启动...`)
+            this.doLaunch(row)
+          })
+        }
+      } else if (data.status === 'failed') {
+        this.downloadingVersion = null
+        this._autoLaunchRow = null
+      } else {
+        this.downloadingVersion = data.version
       }
     })
 
@@ -1310,11 +1333,10 @@ export default {
           this.preProcessData(this.form)
           await addBrowser(this.form, this.$t('browser.browser'))
 
-          this.getList()
+          await this.getList()
 
           // 自动查询 IP 并保存
-          const list = await getBrowserList()
-          const newItem = list[list.length - 1]
+          const newItem = this.list[this.list.length - 1]
           if (newItem) {
             this.fetchAndSaveIp(newItem)
           }
@@ -1479,12 +1501,27 @@ export default {
         .catch(() => {})
     },
     async handleLaunch(row) {
-      // 检查引擎是否已下载
       const ret = await chromeSend('getDownloadedChromeEngines').catch(() => ({ data: [] }))
       const engines = ret?.data || []
       const downloaded = engines.some(e => e.version === row.chrome_version)
       if (!downloaded) {
-        this.$message.warning(`Chrome ${row.chrome_version} 尚未下载，请先下载内核`)
+        const versionsRet = await chromeSend('getChromeVersions').catch(() => ({ data: [] }))
+        const versions = versionsRet?.data || []
+        const versionInfo = versions.find(v => v.version === row.chrome_version)
+        if (!versionInfo || !versionInfo.downloadUrl) {
+          this.$message.error(`Chrome ${row.chrome_version} 找不到下载地址`)
+          return
+        }
+        this.downloadingVersion = row.chrome_version
+        this._autoLaunchRow = row
+        await chromeSend('downloadChromeEngine', {
+          version: versionInfo.version,
+          downloadUrl: versionInfo.downloadUrl
+        }).catch(e => {
+          this.$message.error(e.message || '下载启动失败')
+          this.downloadingVersion = null
+          this._autoLaunchRow = null
+        })
         return
       }
       this.doLaunch(row)
@@ -1514,10 +1551,12 @@ export default {
       const globalSource = store.preferredSource || 'ip-api.com'
       const instanceSource = row.ipQuerySource || undefined
       const preferredSource = instanceSource || globalSource
-      const ret = await chromeSend('fetchIpInfo', preferredSource).catch(() => null)
+      const ret = await chromeSendTimeout('fetchIpInfo', 30000, preferredSource).catch(e => {
+        console.warn('[IP] fetchIpInfo failed:', e.message || e)
+        return null
+      })
       if (ret && ret.success) {
         this.$set(row, 'ipInfo', { ip: ret.ip, country: ret.country, countryCode: ret.countryCode })
-        // 持久保存到浏览器列表
         const list = await getBrowserList()
         const item = list.find(b => b.id === row.id)
         if (item) {
@@ -2026,5 +2065,37 @@ export default {
   background-color: #67C23A !important;
   border-color: #67C23A !important;
   color: #fff !important;
+}
+
+.group-text {
+  color: #409EFF !important;
+  cursor: pointer;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline;
+  line-height: inherit;
+  font-size: inherit;
+}
+
+.ip-refresh-icon {
+  color: #00FF38 !important;
+  cursor: pointer;
+  font-size: 14px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-block;
+  line-height: 1;
+}
+
+.group-text:hover {
+  opacity: 0.8;
+}
+
+.ip-refresh-icon:hover {
+  opacity: 0.8;
 }
 </style>

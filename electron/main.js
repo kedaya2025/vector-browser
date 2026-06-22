@@ -575,8 +575,8 @@ ipcMain.handle('getChromeVersions', async () => {
       }
     }
 
-    // 从 Google 获取稳定版列表（per-milestone 只含 stable）
-    const url = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-per-milestone-with-downloads.json'
+    // 从 Google 获取版本列表
+    const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
     console.log('[ChromeVersions] 请求:', url)
 
     const json = await new Promise((resolve, reject) => {
@@ -597,31 +597,31 @@ ipcMain.handle('getChromeVersions', async () => {
       req.on('timeout', () => { req.destroy(); reject(new Error('请求超时')) })
     })
 
-    // 此 API 返回 { milestones: { "136": { channel: "Stable", version: "...", downloads: {...} } } }
-    const milestones = json.milestones || {}
-    const versions = []
-    const sortedMilestones = Object.keys(milestones)
-      .map(Number)
-      .sort((a, b) => b - a)
-      .slice(0, 20)
-
-    for (const ms of sortedMilestones) {
-      const item = milestones[ms]
-      if (!item) continue
-      const ch = (item.channel || '').toLowerCase()
-      if (ch && ch !== 'stable') continue
+    // 提取有 win64 下载的稳定版，按大版本去重，取最新 20 个大版本
+    // 稳定版特征：第二段版本号为 "0"（如 136.0.7103.94），测试版非零（如 136.1234.0.0）
+    const allVersions = json.versions || []
+    const majorVersionMap = new Map()
+    for (let i = allVersions.length - 1; i >= 0; i--) {
+      const item = allVersions[i]
+      const parts = item.version.split('.')
+      if (parts[1] !== '0') continue
 
       const win64Download = item.downloads?.chrome?.find(d => d.platform === 'win64')
       if (!win64Download) continue
 
-      versions.push({
-        version: item.version,
-        downloaded: false,
-        downloadUrl: win64Download.url
-      })
+      const major = parts[0]
+      if (!majorVersionMap.has(major)) {
+        majorVersionMap.set(major, {
+          version: item.version,
+          downloaded: false,
+          downloadUrl: win64Download.url
+        })
+      }
+      if (majorVersionMap.size >= 20) break
     }
 
-    console.log('[ChromeVersions] 获取到稳定版数量:', versions.length)
+    const versions = Array.from(majorVersionMap.values())
+    console.log('[ChromeVersions] 大版本去重后数量:', versions.length)
 
     // 检查哪些已下载
     const downloadedDirs = getDownloadedVersionDirs()

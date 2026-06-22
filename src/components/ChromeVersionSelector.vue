@@ -6,8 +6,8 @@
         filterable
         :placeholder="loading ? '加载中...' : '选择 Chrome 版本'"
         :loading="loading"
-        style="flex: 1"
         popper-class="chrome-version-dropdown"
+        class="version-select"
         @change="handleChange"
       >
         <el-option
@@ -24,10 +24,9 @@
       </el-select>
 
       <el-button
-        v-if="selectedVersion && !isDownloaded(selectedVersion)"
         type="success"
         :loading="!!downloadingVersion"
-        :disabled="!!downloadingVersion"
+        :disabled="!selectedVersion || isDownloaded(selectedVersion)"
         class="dl-btn"
         @click="handleDownloadSelected"
       >
@@ -41,7 +40,6 @@
         :status="downloadStatus === 'failed' ? 'exception' : ''"
         :color="downloadStatus === 'failed' ? '#f56c6c' : '#00FF38'"
         :stroke-width="10"
-        style="flex: 1"
       />
     </div>
   </div>
@@ -149,17 +147,16 @@ export default {
   gap: 8px;
 }
 
+.version-select {
+  width: 240px;
+}
+
 .dl-btn {
   background: #00FF38 !important;
   border-color: #00FF38 !important;
   color: #000 !important;
   font-weight: bold;
   flex-shrink: 0;
-  height: 40px !important;
-  line-height: 40px !important;
-  padding: 0 20px !important;
-  margin: 0 !important;
-  border-radius: 4px !important;
 
   &:hover {
     background: #00cc2e !important;

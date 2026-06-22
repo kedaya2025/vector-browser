@@ -199,9 +199,6 @@
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item :label="$t('browser.version')">
-                    <div v-if="form.chrome_version" style="margin-bottom: 8px; color: #67c23a">
-                      当前选择: {{ form.chrome_version }}
-                    </div>
                     <ChromeVersionSelector
                       v-model="form.chrome_version"
                       @change="handleVersionChange"

@@ -499,13 +499,31 @@ ipcMain.handle('getChromeVersions', async () => {
       }
     }
 
-    // 从 Google 获取最新版本列表
+    // 从 Google 获取最新版本列表（使用 net 模块）
     const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    const json = await response.json()
+    const json = await new Promise((resolve, reject) => {
+      const request = net.request(url)
+      let body = ''
+      request.on('response', (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}`))
+          return
+        }
+        response.on('data', (chunk) => {
+          body += chunk.toString()
+        })
+        response.on('end', () => {
+          try {
+            resolve(JSON.parse(body))
+          } catch (e) {
+            reject(e)
+          }
+        })
+        response.on('error', reject)
+      })
+      request.on('error', reject)
+      request.end()
+    })
 
     // 提取有 win64 下载的版本，取最近 50 个
     const versions = []

@@ -583,11 +583,15 @@ ipcMain.handle('getChromeVersions', async () => {
       req.on('timeout', () => { req.destroy(); reject(new Error('请求超时')) })
     })
 
-    // 提取有 win64 下载的版本，按大版本去重，取最新 20 个大版本
+    // 提取有 win64 下载的稳定版，按大版本去重，取最新 20 个大版本
     const allVersions = json.versions || []
     const majorVersionMap = new Map() // major -> { version, downloadUrl }
     for (let i = allVersions.length - 1; i >= 0; i--) {
       const item = allVersions[i]
+      // 只保留 stable 通道版本（channel 为 "stable" 或空字符串）
+      const ch = (item.channel || '').toLowerCase()
+      if (ch && ch !== 'stable') continue
+
       const win64Download = item.downloads?.chrome?.find(d => d.platform === 'win64')
       if (!win64Download) continue
 

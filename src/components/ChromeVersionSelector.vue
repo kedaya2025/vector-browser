@@ -142,10 +142,11 @@ export default {
   background: #1a1a1a !important;
   border: 1px solid #00FF38 !important;
   border-radius: 4px !important;
-  overflow: visible !important;
 
   .el-select-dropdown__list {
     padding: 4px 0 !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
   }
 
   .el-select-dropdown__item {

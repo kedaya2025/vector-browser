@@ -15,7 +15,6 @@
           :key="item.version"
           :value="item.version"
           :label="item.version"
-          :disabled="!item.downloaded"
         >
           <span :class="item.downloaded ? 'version-enabled' : 'version-disabled'">
             {{ item.version }}

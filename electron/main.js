@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const https = require('https')
+const http = require('http')
+const crypto = require('crypto')
 const { spawn } = require('child_process')
 const AdmZip = require('adm-zip')
 
@@ -31,6 +33,15 @@ let mainWindow = null
 const runningBrowsers = new Map() // id -> ChildProcess
 const downloadingChrome = new Map() // version -> { abortController, progress }
 
+// ============ Environment Page Server ============
+let envServer = null
+let envServerPort = null
+const envTokens = new Map() // token -> { profileId, expiresAt }
+const DEFAULT_ENV_PORT = 25252
+const ENV_PORT_RANGE_START = 25253
+const ENV_PORT_RANGE_END = 25352
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000
+
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
 }
@@ -49,6 +60,178 @@ function readJSON(filePath, fallback = {}) {
 function writeJSON(filePath, data) {
   ensureDir(path.dirname(filePath))
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8')
+}
+
+// ============ Environment Page Server ============
+
+function generateEnvToken(profileId) {
+  const token = crypto.randomBytes(32).toString('hex')
+  const now = Date.now()
+  envTokens.set(token, { profileId, expiresAt: now + TOKEN_TTL_MS })
+  if (envTokens.size > 100) {
+    for (const [t, data] of envTokens) {
+      if (Date.now() > data.expiresAt) envTokens.delete(t)
+    }
+  }
+  return token
+}
+
+function validateEnvToken(token, profileId) {
+  if (!token || !envTokens.has(token)) return false
+  const data = envTokens.get(token)
+  if (Date.now() > data.expiresAt) { envTokens.delete(token); return false }
+  if (data.profileId !== profileId) return false
+  return true
+}
+
+function findAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const tryPort = (port) => {
+      const server = http.createServer()
+      server.once('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          if (port === DEFAULT_ENV_PORT) {
+            tryPort(ENV_PORT_RANGE_START)
+          } else if (port < ENV_PORT_RANGE_END) {
+            tryPort(ENV_PORT_RANGE_START + Math.floor(Math.random() * (ENV_PORT_RANGE_END - ENV_PORT_RANGE_START + 1)))
+          } else {
+            reject(new Error('No available port'))
+          }
+        } else { reject(err) }
+      })
+      server.once('listening', () => { server.close(() => resolve(port)) })
+      server.listen(port, '127.0.0.1')
+    }
+    tryPort(DEFAULT_ENV_PORT)
+  })
+}
+
+function getProfileById(id) {
+  const browserList = readJSON(BROWSER_LIST_FILE, { users: [] })
+  return browserList.users.find(u => u.id === id) || null
+}
+
+function extractConfigData(profile) {
+  return {
+    id: profile.id,
+    name: profile.name,
+    os: profile.os,
+    chromeVersion: profile.chrome_version,
+    group: profile.group,
+    ipInfo: profile.ipInfo || null,
+    proxy: profile.proxy || {},
+    ua: profile.ua || {},
+    uaFullVersion: profile['ua-full-version'] || {},
+    secChUa: profile['sec-ch-ua'] || {},
+    uaLanguage: profile['ua-language'] || {},
+    timeZone: profile['time-zone'] || {},
+    webrtc: profile.webrtc || {},
+    location: profile.location || {},
+    screen: profile.screen || {},
+    fonts: profile.fonts || {},
+    canvas: profile.canvas || {},
+    webglImage: profile['webgl-img'] || {},
+    webgl: profile.webgl || {},
+    audioContext: profile['audio-context'] || {},
+    media: profile.media || {},
+    clientRects: profile['client-rects'] || {},
+    speechVoices: profile['speech_voices'] || {},
+    ssl: profile.ssl || {},
+    cpu: profile.cpu || {},
+    memory: profile.memory || {},
+    deviceName: profile['device-name'] || {},
+    mac: profile.mac || {},
+    dnt: profile.dnt || {},
+    portScan: profile['port-scan'] || {},
+    gpu: profile.gpu || {},
+    cookie: profile.cookie || {},
+    homepage: profile.homepage || {}
+  }
+}
+
+function startEnvServer() {
+  return new Promise(async (resolve, reject) => {
+    if (envServer && envServerPort) { resolve(envServerPort); return }
+    try {
+      const port = await findAvailablePort()
+      const htmlPath = path.join(__dirname, 'environment.html')
+
+      const server = http.createServer((req, res) => {
+        const parsedUrl = new URL(req.url, `http://127.0.0.1:${port}`)
+        const pathname = parsedUrl.pathname
+        const query = Object.fromEntries(parsedUrl.searchParams)
+
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+
+        if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+
+        // GET /environment.html?id=xxx&token=xxx
+        if (pathname === '/environment.html') {
+          const profileId = parseInt(query.id, 10)
+          const token = query.token
+          if (!validateEnvToken(token, profileId)) {
+            res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' })
+            res.end('<html><body style="background:#1e1e1e;color:#ff4444;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh"><h1>403 Forbidden</h1></body></html>')
+            return
+          }
+          if (!fs.existsSync(htmlPath)) {
+            res.writeHead(500, { 'Content-Type': 'text/plain' })
+            res.end('environment.html not found')
+            return
+          }
+          let html = fs.readFileSync(htmlPath, 'utf-8')
+          const injectedConfig = JSON.stringify({ profileId, token, serverPort: port })
+          html = html.replace('<!-- SERVER_CONFIG_INJECT -->', `<script>window.__SERVER_CONFIG__ = ${injectedConfig};</script>`)
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+          res.end(html)
+          return
+        }
+
+        // GET /api/environment?id=xxx&token=xxx
+        if (pathname === '/api/environment') {
+          const profileId = parseInt(query.id, 10)
+          const token = query.token
+          if (!validateEnvToken(token, profileId)) {
+            res.writeHead(403, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Invalid token' }))
+            return
+          }
+          const profile = getProfileById(profileId)
+          if (!profile) {
+            res.writeHead(404, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'Profile not found' }))
+            return
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(extractConfigData(profile)))
+          return
+        }
+
+        res.writeHead(404, { 'Content-Type': 'text/plain' })
+        res.end('Not Found')
+      })
+
+      server.listen(port, '127.0.0.1', () => {
+        envServer = server
+        envServerPort = port
+        console.log(`[EnvServer] Started on port ${port}`)
+        resolve(port)
+      })
+      server.on('error', (err) => {
+        envServer = null; envServerPort = null
+        reject(err)
+      })
+    } catch (err) { reject(err) }
+  })
+}
+
+function stopEnvServer() {
+  return new Promise((resolve) => {
+    if (envServer) {
+      envServer.close(() => { envServer = null; envServerPort = null; resolve() })
+    } else { resolve() }
+  })
 }
 
 function createWindow() {
@@ -332,6 +515,16 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
     return { success: false, error: '未找到可用的浏览器引擎，请先在版本选择中下载 Chrome 引擎' }
   }
 
+  // 启动环境页面服务器
+  let envPageUrl = null
+  try {
+    const port = await startEnvServer()
+    const token = generateEnvToken(id)
+    envPageUrl = `http://127.0.0.1:${port}/environment.html?id=${id}&token=${token}`
+  } catch (e) {
+    console.error('[LaunchBrowser] Env server start failed:', e.message)
+  }
+
   // 构建启动参数
   const args = [
     `--user-data-dir=${profileDir}`,
@@ -377,8 +570,11 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
     }
   }
 
-  if (profile && profile.homepage) {
-    args.push(profile.homepage)
+  // 首页：优先环境页面，其次用户配置的 homepage
+  if (envPageUrl) {
+    args.push(envPageUrl)
+  } else if (profile && profile.homepage && profile.homepage.value) {
+    args.push(profile.homepage.value)
   }
 
   // 启动进程
@@ -847,7 +1043,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  app.quit()
+  stopEnvServer().then(() => app.quit()).catch(() => app.quit())
 })
 
 app.on('activate', () => {

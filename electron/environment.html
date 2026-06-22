@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vector Browser - Environment</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1e1e1e; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; line-height: 1.6; min-height: 100vh; }
+a { color: #00FF81; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.header { background: #1a1a1a; border-bottom: 1px solid #333; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 20px; font-weight: 700; color: #00FF81; letter-spacing: 1px; }
+.header-title { font-size: 14px; color: #888; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00FF81; display: inline-block; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.status-text { font-size: 12px; color: #888; }
+.btn-refresh { background: transparent; border: 1px solid #00FF81; color: #00FF81; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+.btn-refresh:hover { background: #00FF81; color: #1e1e1e; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+.card { background: #252525; border: 1px solid #333; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+.card-header { background: #2a2a2a; padding: 12px 20px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
+.card-header h2 { font-size: 14px; font-weight: 600; color: #00FF81; text-transform: uppercase; letter-spacing: 1px; }
+.card-header .icon { font-size: 16px; }
+.card-body { padding: 16px 20px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+.grid-item { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-bottom: 1px solid #2a2a2a; }
+.grid-item:last-child { border-bottom: none; }
+.grid-item.full { grid-column: 1 / -1; }
+
+.label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+.value { font-size: 13px; color: #e0e0e0; word-break: break-all; }
+.value.green { color: #00FF81; }
+.value.configured { color: #aaa; }
+.value.error { color: #ff6b6b; }
+.value .tag { display: inline-block; background: #333; color: #00FF81; padding: 1px 6px; border-radius: 3px; font-size: 11px; margin-left: 6px; }
+.value .tag.mismatch { background: #3a1a1a; color: #ff6b6b; }
+.value .tag.match { background: #1a3a1a; color: #00FF81; }
+
+.footer { text-align: center; padding: 24px; color: #555; font-size: 12px; border-top: 1px solid #333; margin-top: 20px; }
+
+.loading { display: flex; justify-content: center; align-items: center; height: 200px; color: #666; }
+.loading .spinner { width: 24px; height: 24px; border: 2px solid #333; border-top-color: #00FF81; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-page { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; gap: 16px; }
+.error-page h1 { color: #ff6b6b; font-size: 24px; }
+.error-page p { color: #888; }
+
+.ip-highlight { font-size: 24px; font-weight: 700; color: #00FF81; font-family: 'Courier New', monospace; letter-spacing: 2px; }
+.ip-country { font-size: 14px; color: #888; margin-top: 4px; }
+</style>
+</head>
+<body>
+<!-- SERVER_CONFIG_INJECT -->
+
+<div id="app">
+  <div class="header">
+    <div class="header-left">
+      <span class="logo">Vector Browser</span>
+      <span class="header-title">Environment Inspection</span>
+    </div>
+    <div class="header-right">
+      <span class="status-dot"></span>
+      <span class="status-text" id="statusText">Loading...</span>
+      <button class="btn-refresh" onclick="location.reload()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="container" id="content">
+    <div class="loading"><div class="spinner"></div>Detecting environment...</div>
+  </div>
+
+  <div class="footer">Vector Browser Environment Page &mdash; <span id="ts"></span></div>
+</div>
+
+<script>
+const CFG = window.__SERVER_CONFIG__ || {};
+const API_BASE = `http://127.0.0.1:${CFG.serverPort || 25252}`;
+const API_URL = `${API_BASE}/api/environment?id=${CFG.profileId}&token=${CFG.token}`;
+
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'className') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else e.setAttribute(k, v);
+  });
+  children.forEach(c => {
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else if (c) e.appendChild(c);
+  });
+  return e;
+}
+
+function field(label, configVal, actualVal, opts = {}) {
+  const item = el('div', { className: 'grid-item' + (opts.full ? ' full' : '') });
+  item.appendChild(el('span', { className: 'label' }, label));
+
+  if (configVal !== undefined && configVal !== null && configVal !== '') {
+    const cv = el('span', { className: 'value configured' });
+    cv.appendChild(document.createTextNode('Config: '));
+    cv.appendChild(document.createTextNode(formatVal(configVal)));
+    item.appendChild(cv);
+  }
+
+  if (actualVal !== undefined && actualVal !== null && actualVal !== '') {
+    const av = el('span', { className: 'value green' });
+    av.appendChild(document.createTextNode('Actual: '));
+    av.appendChild(document.createTextNode(formatVal(actualVal)));
+    if (configVal !== undefined && configVal !== null && configVal !== '') {
+      const match = String(configVal) === String(actualVal);
+      av.appendChild(el('span', { className: 'tag ' + (match ? 'match' : 'mismatch') }, match ? 'Match' : 'Diff'));
+    }
+    item.appendChild(av);
+  } else if (configVal !== undefined && configVal !== null && configVal !== '') {
+    // only config, no actual
+  } else {
+    item.appendChild(el('span', { className: 'value' }, '-'));
+  }
+
+  return item;
+}
+
+function formatVal(v) {
+  if (v === null || v === undefined) return '-';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+
+function section(title, icon, items) {
+  const card = el('div', { className: 'card' });
+  const header = el('div', { className: 'card-header' });
+  header.appendChild(el('span', { className: 'icon' }, icon));
+  header.appendChild(el('h2', {}, title));
+  card.appendChild(header);
+
+  const body = el('div', { className: 'card-body' });
+  const grid = el('div', { className: 'grid' });
+  items.forEach(i => grid.appendChild(i));
+  body.appendChild(grid);
+  card.appendChild(body);
+  return card;
+}
+
+async function fetchConfig() {
+  try {
+    const resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (e) {
+    console.error('Failed to fetch config:', e);
+    return null;
+  }
+}
+
+async function detectActual() {
+  const d = {};
+
+  // UA
+  d.userAgent = navigator.userAgent;
+  d.platform = navigator.platform;
+  d.appVersion = navigator.appVersion;
+  d.language = navigator.language;
+  d.languages = navigator.languages ? navigator.languages.join(', ') : '';
+  d.cookieEnabled = navigator.cookieEnabled;
+  d.doNotTrack = navigator.doNotTrack;
+  d.maxTouchPoints = navigator.maxTouchPoints;
+
+  // Screen
+  d.screenWidth = screen.width;
+  d.screenHeight = screen.height;
+  d.screenColorDepth = screen.colorDepth;
+  d.screenPixelDepth = screen.pixelDepth;
+  d.windowWidth = window.innerWidth;
+  d.windowHeight = window.innerHeight;
+  d.devicePixelRatio = window.devicePixelRatio;
+
+  // Hardware
+  d.cpuCores = navigator.hardwareConcurrency;
+  d.deviceMemory = navigator.deviceMemory;
+
+  // Connection
+  if (navigator.connection) {
+    d.connectionType = navigator.connection.effectiveType;
+    d.downlink = navigator.connection.downlink;
+    d.rtt = navigator.connection.rtt;
+  }
+
+  // Timezone
+  try {
+    d.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    d.timezoneOffset = new Date().getTimezoneOffset();
+  } catch(e) {}
+
+  // WebGL
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (gl) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        d.webglVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        d.webglRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      }
+      d.webglVersion = gl.getParameter(gl.VERSION);
+      d.webglSLVersion = gl.getParameter(gl.SHADING_LANGUAGE_VERSION);
+    }
+  } catch(e) {}
+
+  // Canvas fingerprint
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200; canvas.height = 50;
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(125, 1, 62, 20);
+    ctx.fillStyle = '#069';
+    ctx.fillText('VectorBrowser', 2, 15);
+    ctx.fillStyle = 'rgba(102,204,0,0.7)';
+    ctx.fillText('VectorBrowser', 4, 17);
+    d.canvasFingerprint = canvas.toDataURL().slice(-50);
+  } catch(e) {}
+
+  // Audio
+  try {
+    const ac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 44100, 44100);
+    const osc = ac.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(10000, ac.currentTime);
+    const comp = ac.createDynamicsCompressor();
+    osc.connect(comp);
+    comp.connect(ac.destination);
+    osc.start(0);
+    const buffer = await ac.startRendering();
+    const data = buffer.getChannelData(0);
+    let sum = 0;
+    for (let i = 4500; i < 5000; i++) sum += Math.abs(data[i]);
+    d.audioFingerprint = sum.toFixed(6);
+  } catch(e) {}
+
+  // Speech voices
+  try {
+    d.speechVoices = speechSynthesis.getVoices().length;
+  } catch(e) { d.speechVoices = 0; }
+
+  // Plugins
+  d.plugins = navigator.plugins ? navigator.plugins.length : 0;
+
+  // Geolocation permission
+  try {
+    d.geolocation = navigator.geolocation ? 'available' : 'not available';
+  } catch(e) {}
+
+  // WebRTC
+  try {
+    d.webrtc = (window.RTCPeerConnection || window.webkitRTCPeerConnection) ? 'available' : 'not available';
+  } catch(e) {}
+
+  // External IP
+  try {
+    const sources = [
+      { url: 'http://ip-api.com/json/?fields=query,country,regionName,city,isp,org,as', parse: r => ({ ip: r.query, country: r.country, region: r.regionName, city: r.city, isp: r.isp, org: r.org, asn: r.as }) },
+      { url: 'https://ipapi.co/json/', parse: r => ({ ip: r.ip, country: r.country_name, region: r.region, city: r.city, isp: r.org, org: r.org, asn: r.asn }) },
+      { url: 'https://ipwho.is/', parse: r => ({ ip: r.ip, country: r.country, region: r.region, city: r.city, isp: r.connection?.isp, org: r.connection?.org, asn: r.connection?.asn }) }
+    ];
+    for (const src of sources) {
+      try {
+        const resp = await fetch(src.url, { signal: AbortSignal.timeout(5000) });
+        if (resp.ok) {
+          const data = await resp.json();
+          const parsed = src.parse(data);
+          if (parsed.ip) { d.externalIp = parsed; break; }
+        }
+      } catch(e) { continue; }
+    }
+  } catch(e) {}
+
+  return d;
+}
+
+function render(config, actual) {
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  const sections = [];
+
+  // 1. IP Information
+  const ipItems = [];
+  if (actual.externalIp) {
+    ipItems.push(el('div', { className: 'grid-item full' },
+      el('span', { className: 'label' }, 'PUBLIC IP'),
+      el('span', { className: 'ip-highlight' }, actual.externalIp.ip),
+      el('span', { className: 'ip-country' }, [actual.externalIp.country, actual.externalIp.region, actual.externalIp.city].filter(Boolean).join(' / '))
+    ));
+    if (actual.externalIp.isp) ipItems.push(field('ISP', null, actual.externalIp.isp));
+    if (actual.externalIp.org) ipItems.push(field('Organization', null, actual.externalIp.org));
+    if (actual.externalIp.asn) ipItems.push(field('ASN', null, actual.externalIp.asn));
+  } else {
+    ipItems.push(el('div', { className: 'grid-item full' },
+      el('span', { className: 'label' }, 'PUBLIC IP'),
+      el('span', { className: 'value error' }, 'Detecting...')
+    ));
+  }
+  if (config) {
+    if (config.proxy && config.proxy.host) {
+      ipItems.push(field('Proxy Config', `${config.proxy.protocol || 'HTTP'}://${config.proxy.host}:${config.proxy.port}`, null));
+    }
+    if (config.ipInfo && config.ipInfo.ip) {
+      ipItems.push(field('Configured IP', config.ipInfo.ip + ' (' + (config.ipInfo.country || '') + ')', null));
+    }
+  }
+  sections.push(section('IP Information', '\u{1F310}', ipItems));
+
+  // 2. Browser Identity
+  const idItems = [];
+  if (config) {
+    idItems.push(field('User-Agent', config.ua?.value || '', actual.userAgent, { full: true }));
+    idItems.push(field('UA Full Version', config.uaFullVersion?.value || '', ''));
+    if (config.secChUa?.value) {
+      const brands = config.secChUa.value.map(b => `${b.brand} v${b.version}`).join(', ');
+      idItems.push(field('Sec-CH-UA', brands, ''));
+    }
+    idItems.push(field('Language', config.uaLanguage?.value || '', actual.language));
+    if (config.timeZone) {
+      const tz = config.timeZone.name || config.timeZone.zone || '';
+      idItems.push(field('Timezone', tz, actual.timezone));
+    }
+  } else {
+    idItems.push(field('User-Agent', '', actual.userAgent, { full: true }));
+    idItems.push(field('Language', '', actual.language));
+    idItems.push(field('Timezone', '', actual.timezone));
+  }
+  idItems.push(field('Platform', '', actual.platform));
+  idItems.push(field('App Version', '', actual.appVersion, { full: true }));
+  idItems.push(field('Languages List', '', actual.languages));
+  sections.push(section('Browser Identity', '\u{1F9F2}', idItems));
+
+  // 3. Screen & Display
+  const screenItems = [];
+  if (config && config.screen) {
+    const res = config.screen._value || `${config.screen.width}x${config.screen.height}`;
+    screenItems.push(field('Resolution', res, `${actual.screenWidth}x${actual.screenHeight}`));
+  } else {
+    screenItems.push(field('Resolution', '', `${actual.screenWidth}x${actual.screenHeight}`));
+  }
+  screenItems.push(field('Window Size', '', `${actual.windowWidth}x${actual.windowHeight}`));
+  screenItems.push(field('Color Depth', '', actual.screenColorDepth));
+  screenItems.push(field('Pixel Depth', '', actual.screenPixelDepth));
+  screenItems.push(field('Device Pixel Ratio', '', actual.devicePixelRatio));
+  sections.push(section('Screen & Display', '\u{1F5A5}', screenItems));
+
+  // 4. Hardware
+  const hwItems = [];
+  if (config) {
+    hwItems.push(field('CPU Cores', config.cpu?.value || '', actual.cpuCores));
+    hwItems.push(field('Memory (GB)', config.memory?.value || '', actual.deviceMemory));
+    hwItems.push(field('GPU Enabled', config.gpu?.value === 1 ? 'Yes' : 'No', ''));
+    hwItems.push(field('WebGL Vendor', config.webgl?.vendor || '', actual.webglVendor));
+    hwItems.push(field('WebGL Renderer', config.webgl?.render || '', actual.webglRenderer));
+    hwItems.push(field('Device Name', config.deviceName?.value || '', '', { full: true }));
+    hwItems.push(field('MAC Address', config.mac?.value || '', '', { full: true }));
+  } else {
+    hwItems.push(field('CPU Cores', '', actual.cpuCores));
+    hwItems.push(field('Memory (GB)', '', actual.deviceMemory));
+    hwItems.push(field('WebGL Vendor', '', actual.webglVendor));
+    hwItems.push(field('WebGL Renderer', '', actual.webglRenderer));
+  }
+  hwItems.push(field('WebGL Version', '', actual.webglVersion));
+  hwItems.push(field('GLSL Version', '', actual.webglSLVersion));
+  sections.push(section('Hardware', '\u{1F4BB}', hwItems));
+
+  // 5. Privacy & Security
+  const privItems = [];
+  if (config) {
+    const webrtcModes = { 0: 'Replace (Non-proxied)', 1: 'Allow', 2: 'Block' };
+    privItems.push(field('WebRTC Policy', webrtcModes[config.webrtc?.mode] || '', actual.webrtc));
+    const geoModes = { 0: 'Ask', 1: 'Allow', 2: 'Block' };
+    privItems.push(field('Geolocation', geoModes[config.location?.enable] || '', actual.geolocation));
+    privItems.push(field('Do Not Track', config.dnt?.value === 1 ? 'Enabled' : 'Disabled', actual.doNotTrack === '1' ? 'Enabled' : actual.doNotTrack === '0' ? 'Disabled' : actual.doNotTrack || ''));
+    if (config.location && config.location.latitude && config.location.longitude) {
+      privItems.push(field('Coordinates', `${config.location.latitude}, ${config.location.longitude}`, ''));
+    }
+  } else {
+    privItems.push(field('WebRTC', '', actual.webrtc));
+    privItems.push(field('Geolocation', '', actual.geolocation));
+    privItems.push(field('Do Not Track', '', actual.doNotTrack));
+  }
+  privItems.push(field('Cookies Enabled', '', actual.cookieEnabled));
+  privItems.push(field('Max Touch Points', '', actual.maxTouchPoints));
+  sections.push(section('Privacy & Security', '\u{1F512}', privItems));
+
+  // 6. Fingerprint Noise
+  const fpItems = [];
+  if (config) {
+    if (config.canvas) {
+      const c = config.canvas;
+      fpItems.push(field('Canvas Noise', `R:${c.r} G:${c.g} B:${c.b} A:${c.a}`, actual.canvasFingerprint, { full: true }));
+    }
+    if (config.webglImage) {
+      const w = config.webglImage;
+      fpItems.push(field('WebGL Image Noise', `R:${w.r} G:${w.g} B:${w.b} A:${w.a}`, ''));
+    }
+    if (config.audioContext) {
+      const a = config.audioContext;
+      fpItems.push(field('Audio Context Noise', `Channel:${a.channel} Analyser:${a.analyer}`, actual.audioFingerprint));
+    }
+    if (config.clientRects) {
+      const cr = config.clientRects;
+      fpItems.push(field('Client Rects Noise', `W:${cr.width} H:${cr.height}`, ''));
+    }
+    if (config.fonts?.value) {
+      fpItems.push(field('Fonts', config.fonts.value.length + ' fonts configured', ''));
+    }
+    if (config.speechVoices?.value) {
+      fpItems.push(field('Speech Voices', config.speechVoices.value.length + ' voices', actual.speechVoices + ' detected'));
+    }
+  } else {
+    fpItems.push(field('Canvas Fingerprint', '', actual.canvasFingerprint, { full: true }));
+    fpItems.push(field('Audio Fingerprint', '', actual.audioFingerprint));
+    fpItems.push(field('Speech Voices', '', actual.speechVoices));
+  }
+  fpItems.push(field('Plugins', '', actual.plugins));
+  sections.push(section('Fingerprint Noise', '\u{1F3A8}', fpItems));
+
+  // 7. Network
+  const netItems = [];
+  if (config) {
+    if (config.ssl?.value) {
+      netItems.push(field('SSL Fingerprints', config.ssl.value.length + ' disabled', ''));
+    }
+    if (config.portScan?.value) {
+      netItems.push(field('Open Ports', config.portScan.value.join(', ') || 'None', ''));
+    }
+  }
+  netItems.push(field('Connection Type', '', actual.connectionType || 'N/A'));
+  netItems.push(field('Downlink (Mbps)', '', actual.downlink || 'N/A'));
+  netItems.push(field('RTT (ms)', '', actual.rtt || 'N/A'));
+  sections.push(section('Network', '\u{1F310}', netItems));
+
+  // 8. Cookies
+  const cookieItems = [];
+  if (config && config.cookie) {
+    const mode = config.cookie.mode === 1 ? 'Custom' : 'Disabled';
+    cookieItems.push(field('Cookie Mode', mode, '', { full: true }));
+    if (config.cookie.value && Array.isArray(config.cookie.value)) {
+      const list = config.cookie.value.map(c => `${c.name}=${c.value} (${c.domain})`).join('\n');
+      cookieItems.push(field('Cookies', list || 'None', document.cookie || 'None', { full: true }));
+    }
+  } else {
+    cookieItems.push(field('Cookies', '', document.cookie || 'None', { full: true }));
+  }
+  sections.push(section('Cookies', '\u{1F36A}', cookieItems));
+
+  // 9. Profile Info
+  if (config) {
+    const profItems = [];
+    profItems.push(field('Profile ID', config.id, ''));
+    profItems.push(field('Profile Name', config.name, ''));
+    profItems.push(field('Group', config.group || '', ''));
+    profItems.push(field('OS', config.os || '', ''));
+    profItems.push(field('Chrome Version', config.chromeVersion || '', ''));
+    sections.push(section('Profile Info', '\u{1F464}', profItems));
+  }
+
+  sections.forEach(s => content.appendChild(s));
+  document.getElementById('statusText').textContent = `Profile #${CFG.profileId || '?'} | Port ${CFG.serverPort || '?'}`;
+  document.getElementById('ts').textContent = new Date().toLocaleString();
+}
+
+async function init() {
+  if (!CFG.profileId || !CFG.token) {
+    document.getElementById('content').innerHTML = '<div class="error-page"><h1>Invalid Access</h1><p>Missing profile ID or token.</p></div>';
+    return;
+  }
+
+  const [config, actual] = await Promise.all([fetchConfig(), detectActual()]);
+  render(config, actual);
+}
+
+init();
+</script>
+</body>
+</html>

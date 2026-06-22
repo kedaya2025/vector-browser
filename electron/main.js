@@ -285,37 +285,56 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
 
   // 根据配置的引擎查找可执行文件
   let chromeExe = null
-  if (profile && profile.engine) {
-    // 使用指定的引擎
-    const engineDir = path.join(BROWSER_ENGINES_DIR, profile.engine)
-    if (fs.existsSync(path.join(engineDir, 'chrome.exe'))) {
-      chromeExe = path.join(engineDir, 'chrome.exe')
-    } else if (fs.existsSync(path.join(engineDir, 'camoufox.exe'))) {
-      chromeExe = path.join(engineDir, 'camoufox.exe')
+  if (profile) {
+    // 优先查找 chrome-engines 目录（按版本号）
+    const versionDir = path.join(CHROME_ENGINES_DIR, profile.chrome_version || '')
+    if (fs.existsSync(versionDir)) {
+      const exe = path.join(versionDir, 'chrome.exe')
+      if (fs.existsSync(exe)) chromeExe = exe
+    }
+
+    // 如果指定了 engine 名称，查找 browser 目录
+    if (!chromeExe && profile.engine) {
+      const engineDir = path.join(BROWSER_ENGINES_DIR, profile.engine)
+      if (fs.existsSync(path.join(engineDir, 'chrome.exe'))) {
+        chromeExe = path.join(engineDir, 'chrome.exe')
+      } else if (fs.existsSync(path.join(engineDir, 'camoufox.exe'))) {
+        chromeExe = path.join(engineDir, 'camoufox.exe')
+      }
     }
   }
 
-  // 如果没有指定引擎或引擎不存在，使用默认引擎（第一个可用的）
-  if (!chromeExe) {
-    const engines = []
-    if (fs.existsSync(BROWSER_ENGINES_DIR)) {
-      const entries = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue
-        const engineDir = path.join(BROWSER_ENGINES_DIR, entry.name)
-        if (fs.existsSync(path.join(engineDir, 'chrome.exe'))) {
-          chromeExe = path.join(engineDir, 'chrome.exe')
-          break
-        } else if (fs.existsSync(path.join(engineDir, 'camoufox.exe'))) {
-          chromeExe = path.join(engineDir, 'camoufox.exe')
-          break
-        }
+  // 如果还没找到，在 chrome-engines 目录中查找第一个可用的
+  if (!chromeExe && fs.existsSync(CHROME_ENGINES_DIR)) {
+    const entries = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const exe = path.join(CHROME_ENGINES_DIR, entry.name, 'chrome.exe')
+      if (fs.existsSync(exe)) {
+        chromeExe = exe
+        break
+      }
+    }
+  }
+
+  // 最后尝试 browser 目录
+  if (!chromeExe && fs.existsSync(BROWSER_ENGINES_DIR)) {
+    const entries = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const engineDir = path.join(BROWSER_ENGINES_DIR, entry.name)
+      if (fs.existsSync(path.join(engineDir, 'chrome.exe'))) {
+        chromeExe = path.join(engineDir, 'chrome.exe')
+        break
+      } else if (fs.existsSync(path.join(engineDir, 'camoufox.exe'))) {
+        chromeExe = path.join(engineDir, 'camoufox.exe')
+        break
       }
     }
   }
 
   if (!chromeExe || !fs.existsSync(chromeExe)) {
-    return { success: false, error: '未找到可用的浏览器引擎，请在 browser 目录中放置引擎文件夹' }
+    return { success: false, error: '未找到可用的浏览器引擎，请先在版本选择中下载 Chrome 引擎' }
   }
 
   // 构建启动参数

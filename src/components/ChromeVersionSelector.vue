@@ -26,7 +26,6 @@
       <el-button
         v-if="selectedVersion && !isDownloaded(selectedVersion)"
         type="success"
-        size="small"
         :loading="!!downloadingVersion"
         :disabled="!!downloadingVersion"
         class="dl-btn"
@@ -42,10 +41,8 @@
         :status="downloadStatus === 'failed' ? 'exception' : ''"
         :color="downloadStatus === 'failed' ? '#f56c6c' : '#00FF38'"
         :stroke-width="10"
+        style="flex: 1"
       />
-      <span class="dl-text">
-        {{ downloadStatus === 'failed' ? '下载失败' : downloadingVersion }}
-      </span>
     </div>
   </div>
 </template>
@@ -167,15 +164,6 @@ export default {
 
 .download-bar {
   margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.dl-text {
-  font-size: 12px;
-  color: #999;
-  flex-shrink: 0;
 }
 </style>
 

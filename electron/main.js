@@ -480,6 +480,52 @@ ipcMain.handle('checkProxy', async (event, proxyUrl) => {
   }
 })
 
+// IP 查询源列表
+const IP_QUERY_SOURCES = [
+  {
+    name: 'ip-api.com',
+    url: 'http://ip-api.com/json/?fields=query,country,countryCode',
+    parse: (data) => ({ ip: data.query, country: data.country, countryCode: data.countryCode })
+  },
+  {
+    name: 'ipapi.co',
+    url: 'https://ipapi.co/json/',
+    parse: (data) => ({ ip: data.ip, country: data.country_name, countryCode: data.country_code })
+  },
+  {
+    name: 'ipwho.is',
+    url: 'https://ipwho.is/',
+    parse: (data) => ({ ip: data.ip, country: data.country, countryCode: data.country_code })
+  },
+  {
+    name: 'freeipapi.com',
+    url: 'https://freeipapi.com/api/json',
+    parse: (data) => ({ ip: data.ip, country: data.countryName, countryCode: data.countryCode })
+  }
+]
+
+// 查询 IP 信息（多源容错）
+ipcMain.handle('fetchIpInfo', async (event, preferredSource) => {
+  const sources = preferredSource
+    ? [...IP_QUERY_SOURCES.filter(s => s.name === preferredSource), ...IP_QUERY_SOURCES.filter(s => s.name !== preferredSource)]
+    : IP_QUERY_SOURCES
+
+  for (const source of sources) {
+    try {
+      const resp = await fetch(source.url, { signal: AbortSignal.timeout(5000) })
+      if (!resp.ok) continue
+      const data = await resp.json()
+      const result = source.parse(data)
+      if (result.ip && result.country) {
+        return { success: true, ...result, source: source.name }
+      }
+    } catch (e) {
+      console.warn(`IP query failed (${source.name}):`, e.message)
+    }
+  }
+  return { success: false, error: '所有 IP 查询源均失败' }
+})
+
 // 打开外部链接
 ipcMain.handle('openExternal', async (event, url) => {
   shell.openExternal(url)

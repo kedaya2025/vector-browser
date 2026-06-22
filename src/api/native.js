@@ -33,6 +33,7 @@ export async function chromeSendTimeout(name, timeout = 2000, ...params) {
     getGlobalData: () => api.getGlobalData(),
     setGlobalData: jsonStr => api.setGlobalData(jsonStr),
     checkProxy: url => api.checkProxy(url),
+    fetchIpInfo: preferredSource => api.fetchIpInfo(preferredSource),
     getGroupList: () => api.getGroupList(),
     setGroupList: data => api.setGroupList(data),
     getExtensions: () => api.getExtensions(),

@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 代理检测
   checkProxy: proxyUrl => ipcRenderer.invoke('checkProxy', proxyUrl),
 
+  // IP 查询
+  fetchIpInfo: preferredSource => ipcRenderer.invoke('fetchIpInfo', preferredSource),
+
   // 工具
   openExternal: url => ipcRenderer.invoke('openExternal', url),
   openFolder: path => ipcRenderer.invoke('openFolder', path),

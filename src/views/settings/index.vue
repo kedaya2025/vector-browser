@@ -4,29 +4,36 @@
       <el-tab-pane label="IP 查询设置" name="ip-query">
         <div class="settings-section">
           <h3>IP 查询 API 设置</h3>
-          <p class="desc">配置用于自动获取 IP 地理位置信息的 API 服务</p>
+          <p class="desc">配置用于自动获取 IP 地理位置信息的 API 服务（多源自动容错）</p>
 
-          <el-form label-width="100px" style="max-width: 600px; margin-top: 20px">
-            <el-form-item label="查询渠道">
-              <el-select v-model="Channel" placeholder="请选择查询渠道" style="width: 100%">
-                <el-option label="VirtualBrowser" value="virtualbrowser" />
-                <el-option label="ipgeoLocation" value="ipgeolocation" />
+          <el-form label-width="120px" style="max-width: 600px; margin-top: 20px">
+            <el-form-item label="首选查询源">
+              <el-select v-model="preferredSource" placeholder="自动选择" clearable style="width: 100%">
+                <el-option label="自动（依次尝试所有源）" value="" />
+                <el-option label="ip-api.com" value="ip-api.com" />
+                <el-option label="ipapi.co" value="ipapi.co" />
+                <el-option label="ipwho.is" value="ipwho.is" />
+                <el-option label="freeipapi.com" value="freeipapi.com" />
               </el-select>
             </el-form-item>
 
-            <el-form-item v-if="Channel === 'virtualbrowser'" label="获取 Key">
-              <span>点击
-                <a href="https://virtualbrowser.cc" target="_blank" style="color: #4ade80">官网</a>
-                获取 API Key
-              </span>
-            </el-form-item>
-
-            <el-form-item label="API 链接">
-              <el-input v-model="apiLink" placeholder="请输入 IP 查询 API 链接" />
+            <el-form-item label="备选：自定义">
+              <el-input v-model="apiLink" placeholder="自定义 IP 查询 API 链接（可选）" />
             </el-form-item>
 
             <el-form-item>
               <el-button type="primary" @click="saveSettings">保存设置</el-button>
+              <el-button @click="testIpQuery">测试查询</el-button>
+            </el-form-item>
+
+            <el-form-item v-if="testResult">
+              <el-alert
+                :title="testResult.success ? '查询成功' : '查询失败'"
+                :description="testResult.success ? `IP: ${testResult.ip} | 国家: ${testResult.country} | 来源: ${testResult.source}` : testResult.error"
+                :type="testResult.success ? 'success' : 'error'"
+                show-icon
+                :closable="false"
+              />
             </el-form-item>
           </el-form>
         </div>
@@ -102,7 +109,7 @@
 </template>
 
 <script>
-import { getGlobalData, setGlobalData } from '@/api/native'
+import { getGlobalData, setGlobalData, chromeSend } from '@/api/native'
 
 export default {
   name: 'Settings',
@@ -110,8 +117,10 @@ export default {
     return {
       activeTab: 'ip-query',
       apiLink: '',
+      preferredSource: '',
       Channel: 'virtualbrowser',
       engines: [],
+      testResult: null,
       settings: {
         checkUpdate: true,
         minimizeToTray: false,
@@ -128,6 +137,7 @@ export default {
       try {
         const store = await getGlobalData()
         this.apiLink = store.apiLink || ''
+        this.preferredSource = store.preferredSource || ''
         this.Channel = store.Channel || 'virtualbrowser'
         if (store.settings) {
           this.settings = { ...this.settings, ...store.settings }
@@ -147,10 +157,20 @@ export default {
     async saveSettings() {
       try {
         await setGlobalData('apiLink', this.apiLink)
+        await setGlobalData('preferredSource', this.preferredSource)
         await setGlobalData('Channel', this.Channel)
         this.$message.success('IP 查询设置已保存')
       } catch (e) {
         this.$message.error('保存失败: ' + e.message)
+      }
+    },
+    async testIpQuery() {
+      this.testResult = null
+      try {
+        const ret = await chromeSend('fetchIpInfo', this.preferredSource || undefined)
+        this.testResult = ret
+      } catch (e) {
+        this.testResult = { success: false, error: e.message }
       }
     },
     async saveGeneralSettings() {

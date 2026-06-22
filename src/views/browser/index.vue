@@ -97,18 +97,13 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="代理" width="300px">
+      <el-table-column label="IP" width="200px">
         <template slot-scope="{ row }">
-          <span>
-            <template v-if="row.proxy.mode === 0">默认</template>
-            <template v-else-if="row.proxy.mode === 1">不使用代理</template>
-            <template v-else>
-              {{ row.proxy.protocol }}
-              {{
-                row.proxy.host && row.proxy.port ? ' ' + row.proxy.host + ':' + row.proxy.port : ''
-              }}
-            </template>
+          <span v-if="row.ipInfo && row.ipInfo.ip">
+            {{ row.ipInfo.ip }}
+            <el-tag size="mini" type="info" style="margin-left: 4px">{{ row.ipInfo.country }}</el-tag>
           </span>
+          <span v-else style="color: #666">未查询</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -123,23 +118,22 @@
         </template>
       </el-table-column>
 
-      <el-table-column :label="$t('browser.launch')" class-name="status-col" width="120">
+      <el-table-column :label="$t('browser.launch')" class-name="status-col" width="140">
         <template slot-scope="{ row }">
           <el-button
-            type="primary"
-            icon="el-icon-video-play"
+            :type="row.isRunning ? 'success' : 'primary'"
+            :icon="row.isRunning ? '' : 'el-icon-video-play'"
             :loading="row.runLoading"
-            :disabled="row.isRunning"
+            :disabled="row.isRunning || (!row._engineReady && row.runLoading)"
+            :class="{ 'btn-running': row.isRunning }"
             @click="handleLaunch(row)"
           >
             {{
-              $t(
-                row.runLoading
-                  ? 'browser.launching'
-                  : row.isRunning
-                  ? 'browser.launched'
-                  : 'browser.launch'
-              )
+              row.runLoading
+                ? (row._engineReady === false ? '下载中' : $t('browser.launching'))
+                : row.isRunning
+                  ? '运行中'
+                  : $t('browser.launch')
             }}
           </el-button>
         </template>
@@ -203,61 +197,6 @@
                       v-model="form.chrome_version"
                       @change="handleVersionChange"
                     />
-                  </el-form-item>
-                  <el-form-item :label="$t('browser.proxy.setting')">
-                    <el-radio-group v-model="form.proxy.mode">
-                      <el-radio-button :label="0">{{ $t('browser.default') }}</el-radio-button>
-                      <el-radio-button :label="1">{{ $t('browser.no_proxy') }}</el-radio-button>
-                      <el-radio-button :label="2">{{ $t('browser.custom') }}</el-radio-button>
-                    </el-radio-group>
-                    <div v-if="form.proxy.mode == 2" style="margin-top: 10px">
-                      <el-form-item :label="$t('browser.proxy.protocol')" label-width="70px">
-                        <el-select v-model="form.proxy.protocol" style="width: 100px">
-                          <el-option value="HTTP" />
-                          <el-option value="HTTPS" />
-                          <el-option value="SOCKS5" />
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item
-                        :label="$t('browser.proxy.host')"
-                        label-width="70px"
-                        prop="proxy.host"
-                      >
-                        <el-input v-model="form.proxy.host" style="max-width: 250px" />
-                        :
-                        <el-input
-                          v-model="form.proxy.port"
-                          style="width: 70px"
-                          :placeholder="$t('browser.proxy.port')"
-                        />
-                        <span style="font-size: 12px; margin-left: 10px; color: rgb(141, 133, 133)">
-                          可按‘主机:端口:账号:密码’或‘主机:端口’格式粘贴自动识别
-                        </span>
-                      </el-form-item>
-                      <el-form-item :label="$t('browser.proxy.user')" label-width="70px">
-                        <el-input v-model="form.proxy.user" style="max-width: 250px" />
-                      </el-form-item>
-                      <el-form-item :label="$t('browser.proxy.pass')" label-width="70px">
-                        <el-input v-model="form.proxy.pass" style="max-width: 250px" />
-                        &nbsp;
-                        <el-button
-                          type="primary"
-                          style="margin-left: 7px"
-                          :disabled2="checkProxyState.checking"
-                          :loading="checkProxyState.checking"
-                          @click="checkProxy"
-                        >
-                          检测{{ checkProxyState.checking ? '中' : '' }}
-                        </el-button>
-                      </el-form-item>
-                      <el-form-item :label="$t('browser.proxy.API')" label-width="70px">
-                        <el-input v-model="form.proxy.API" style="max-width: 250px" />
-                        &nbsp;
-                        <el-button type="primary" style="margin-left: 7px" @click="checkAPIProxy">
-                          提取代理
-                        </el-button>
-                      </el-form-item>
-                    </div>
                   </el-form-item>
                   <el-form-item :label="$t('browser.cookie.jsonStr')" prop="cookie.jsonStr">
                     <el-switch v-model="form.cookie.mode" :active-value="1" :inactive-value="0" />
@@ -1040,17 +979,29 @@ export default {
   beforeCreate() {
     window._updateState = runingIds => {
       this.list = (this.list || []).map(item => {
+        const wasRunning = item.isRunning
         item.isRunning = runingIds.includes(item.id.toString())
         if (item.isRunning) {
           item.runLoading = false
+        } else if (wasRunning && !item.isRunning) {
+          // 浏览器已关闭
+          item.runLoading = false
         }
-
         return item
       })
     }
   },
   async created() {
     await this.getList()
+
+    // 监听浏览器关闭事件，实时更新按钮状态
+    window.electronAPI.onBrowserClosed?.(id => {
+      const item = (this.list || []).find(b => b.id === Number(id) || b.id === id)
+      if (item) {
+        item.isRunning = false
+        item.runLoading = false
+      }
+    })
 
     this.$watch(
       () => this.form['ua-language'].language,
@@ -1337,6 +1288,14 @@ export default {
           await addBrowser(this.form, this.$t('browser.browser'))
 
           this.getList()
+
+          // 自动查询 IP 并保存
+          const list = await getBrowserList()
+          const newItem = list[list.length - 1]
+          if (newItem) {
+            this.fetchAndSaveIp(newItem)
+          }
+
           this.dialogFormVisible = false
           this.$notify({
             title: this.$t('browser.success'),
@@ -1496,12 +1455,52 @@ export default {
         })
         .catch(() => {})
     },
-    handleLaunch(row) {
-      if (row.proxy && row.proxy.API) {
-        this.GetAPIProxy(row)
+    async handleLaunch(row) {
+      // 检查引擎是否已下载
+      const ret = await chromeSend('getDownloadedChromeEngines').catch(() => ({ data: [] }))
+      const engines = ret?.data || []
+      const downloaded = engines.some(e => e.version === row.chrome_version)
+      if (!downloaded) {
+        row.runLoading = true
+        row._engineReady = false
+        this.$message.warning(`Chrome ${row.chrome_version} 尚未下载，请先下载内核`)
+        // 等待下载完成
+        const checkInterval = setInterval(async () => {
+          const r = await chromeSend('getDownloadedChromeEngines').catch(() => ({ data: [] }))
+          const engs = r?.data || []
+          const ready = engs.some(e => e.version === row.chrome_version)
+          if (ready) {
+            clearInterval(checkInterval)
+            row._engineReady = true
+            this.doLaunch(row)
+          }
+        }, 3000)
+        return
       }
+      this.doLaunch(row)
+    },
+    async doLaunch(row) {
       chromeSend('launchBrowser', row.id.toString())
       row.runLoading = true
+      row._engineReady = true
+      // 自动查询 IP
+      this.fetchAndSaveIp(row)
+    },
+    async fetchAndSaveIp(row) {
+      const store = await getGlobalData().catch(() => ({}))
+      const preferredSource = store.preferredSource || undefined
+      const ret = await chromeSend('fetchIpInfo', preferredSource).catch(() => null)
+      if (ret && ret.success) {
+        this.$set(row, 'ipInfo', { ip: ret.ip, country: ret.country, countryCode: ret.countryCode })
+        // 持久保存到浏览器列表
+        const list = await getBrowserList()
+        const item = list.find(b => b.id === row.id)
+        if (item) {
+          item.ipInfo = { ip: ret.ip, country: ret.country, countryCode: ret.countryCode }
+          const data = { users: list }
+          await chromeSend('setBrowserList', data).catch(() => {})
+        }
+      }
     },
     onReRandomComputerName() {
       this.form['device-name'].value = genRandomComputerName()
@@ -1991,5 +1990,11 @@ export default {
     background-color: rgba(175, 184, 193, 0.2);
     border-radius: 6px;
   }
+}
+
+.btn-running {
+  background-color: #67C23A !important;
+  border-color: #67C23A !important;
+  color: #fff !important;
 }
 </style>

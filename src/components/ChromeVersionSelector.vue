@@ -1,64 +1,82 @@
 <template>
-  <div class="chrome-version-selector">
-    <el-select
-      v-model="selectedVersion"
-      :placeholder="placeholder"
-      :loading="loading"
-      filterable
-      class="version-select"
-      @change="handleChange"
-    >
-      <el-option-group label="已下载">
-        <el-option
-          v-for="item in downloadedVersions"
-          :key="item.version"
-          :label="item.version"
-          :value="item.version"
-        >
-          <span style="float: left">{{ item.version }}</span>
-          <span style="float: right; color: #67c23a; font-size: 12px">
-            <i class="el-icon-check"></i> 已下载
-          </span>
-        </el-option>
-        <el-option
-          v-if="downloadedVersions.length === 0"
-          disabled
-          label="暂无已下载版本"
-          value=""
-        />
-      </el-option-group>
-      <el-option-group label="可下载">
-        <el-option
-          v-for="item in notDownloadedVersions"
-          :key="item.version"
-          :label="item.version"
-          :value="item.version"
-          :disabled="downloadingVersion === item.version"
-        >
-          <div class="version-option">
-            <span>{{ item.version }}</span>
+  <div class="chrome-version-manager">
+    <div class="version-header">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索版本号..."
+        prefix-icon="el-icon-search"
+        clearable
+        style="width: 300px"
+      />
+      <el-button type="primary" icon="el-icon-refresh" :loading="loading" @click="loadVersions">
+        刷新列表
+      </el-button>
+    </div>
+
+    <div class="version-table" v-loading="loading">
+      <el-table
+        :data="filteredVersions"
+        style="width: 100%"
+        border
+        size="small"
+        max-height="400"
+      >
+        <el-table-column label="版本号" prop="version" min-width="150">
+          <template slot-scope="{ row }">
+            <span :class="{ 'downloaded': row.downloaded }">{{ row.version }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="120" align="center">
+          <template slot-scope="{ row }">
+            <el-tag v-if="row.downloaded" type="success" size="mini">已下载</el-tag>
+            <el-tag v-else-if="downloadingVersion === row.version" type="warning" size="mini">
+              下载中
+            </el-tag>
+            <el-tag v-else type="info" size="mini">未下载</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" align="center">
+          <template slot-scope="{ row }">
             <el-button
-              v-if="downloadingVersion !== item.version"
-              type="text"
+              v-if="!row.downloaded && downloadingVersion !== row.version"
+              type="primary"
               size="mini"
-              style="float: right; color: #409eff"
-              @click.stop="handleDownload(item)"
+              icon="el-icon-download"
+              @click="handleDownload(row)"
             >
-              <i class="el-icon-download"></i> 下载
+              下载
             </el-button>
-            <span v-else style="float: right; color: #409eff; font-size: 12px">
-              下载中...
-            </span>
-          </div>
-        </el-option>
-        <el-option
-          v-if="notDownloadedVersions.length === 0"
-          disabled
-          label="全部已下载"
-          value=""
-        />
-      </el-option-group>
-    </el-select>
+            <el-button
+              v-if="downloadingVersion === row.version"
+              type="danger"
+              size="mini"
+              icon="el-icon-close"
+              @click="cancelDownload"
+            >
+              取消
+            </el-button>
+            <el-button
+              v-if="row.downloaded"
+              type="danger"
+              size="mini"
+              icon="el-icon-delete"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+            <el-button
+              v-if="row.downloaded && value !== row.version"
+              type="success"
+              size="mini"
+              icon="el-icon-check"
+              @click="handleSelect(row)"
+            >
+              选择
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <div v-if="downloadingVersion" class="download-progress">
       <div class="progress-info">
@@ -73,15 +91,12 @@
         :percentage="downloadProgress"
         :status="downloadStatus === 'failed' ? 'exception' : ''"
         :color="downloadStatus === 'failed' ? '#f56c6c' : '#67c23a'"
-        :stroke-width="12"
+        :stroke-width="16"
         :text-inside="true"
       />
       <div v-if="downloadStatus === 'failed'" class="retry-btn">
         <el-button type="text" size="mini" @click="retryDownload">
           <i class="el-icon-refresh"></i> 重试
-        </el-button>
-        <el-button type="text" size="mini" style="color: #909399" @click="cancelDownload">
-          取消
         </el-button>
       </div>
     </div>
@@ -97,17 +112,13 @@ export default {
     value: {
       type: String,
       default: ''
-    },
-    placeholder: {
-      type: String,
-      default: '选择 Chrome 版本'
     }
   },
   data() {
     return {
       loading: false,
       versions: [],
-      selectedVersion: this.value,
+      searchQuery: '',
       downloadingVersion: null,
       downloadProgress: 0,
       downloadStatus: '',
@@ -116,30 +127,22 @@ export default {
     }
   },
   computed: {
-    downloadedVersions() {
-      return this.versions.filter(v => v.downloaded)
-    },
-    notDownloadedVersions() {
-      return this.versions.filter(v => !v.downloaded)
+    filteredVersions() {
+      if (!this.searchQuery) return this.versions
+      const query = this.searchQuery.toLowerCase()
+      return this.versions.filter(v => v.version.toLowerCase().includes(query))
     }
   },
   watch: {
-    value(val) {
-      this.selectedVersion = val
+    value() {
+      this.loadVersions()
     }
   },
   async created() {
     await this.loadVersions()
     this.listenDownloadProgress()
   },
-  beforeDestroy() {
-    if (window._chromeDownloadProgressHandler) {
-      window.electronAPI._ipcRenderer?.removeListener?.(
-        'chromeDownloadProgress',
-        window._chromeDownloadProgressHandler
-      )
-    }
-  },
+  beforeDestroy() {},
   methods: {
     async loadVersions() {
       this.loading = true
@@ -150,6 +153,7 @@ export default {
         }
       } catch (e) {
         console.error('Failed to load Chrome versions:', e)
+        this.$message.error('加载版本列表失败: ' + e.message)
       }
       this.loading = false
     },
@@ -167,7 +171,6 @@ export default {
             this.downloadProgress = 0
             this.downloadStatus = ''
             this.loadVersions()
-            this.selectedVersion = data.version
             this.$emit('input', data.version)
             this.$emit('change', data.version)
           } else if (data.status === 'failed') {
@@ -176,9 +179,10 @@ export default {
         })
       }
     },
-    handleChange(val) {
-      this.$emit('input', val)
-      this.$emit('change', val)
+    handleSelect(row) {
+      this.$emit('input', row.version)
+      this.$emit('change', row.version)
+      this.$message.success(`已选择 Chrome ${row.version}`)
     },
     async handleDownload(item) {
       this.downloadingVersion = item.version
@@ -211,37 +215,59 @@ export default {
         this.downloadError = ''
         this.pendingDownloadItem = null
       }
+    },
+    async handleDelete(row) {
+      this.$confirm(`确定要删除 Chrome ${row.version} 吗？`, '确认删除', {
+        type: 'warning'
+      }).then(async () => {
+        try {
+          await chromeSend('deleteChromeEngine', row.version)
+          this.$message.success('已删除')
+          this.loadVersions()
+          if (this.value === row.version) {
+            this.$emit('input', '')
+            this.$emit('change', '')
+          }
+        } catch (e) {
+          this.$message.error('删除失败: ' + e.message)
+        }
+      }).catch(() => {})
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.chrome-version-selector {
+.chrome-version-manager {
   width: 100%;
 }
 
-.version-select {
-  width: 100%;
-}
-
-.version-option {
+.version-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.version-table {
+  margin-bottom: 12px;
+}
+
+.downloaded {
+  color: #67c23a;
+  font-weight: bold;
 }
 
 .download-progress {
-  margin-top: 10px;
-  padding: 10px;
+  padding: 12px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 
   .progress-info {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 6px;
-    font-size: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
 
     .version-text {
       color: #e0e0e0;
@@ -257,9 +283,7 @@ export default {
   }
 
   .retry-btn {
-    margin-top: 6px;
-    display: flex;
-    gap: 10px;
+    margin-top: 8px;
   }
 }
 </style>

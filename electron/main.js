@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
+const { net } = require('electron')
 const AdmZip = require('adm-zip')
 
 const isDev = !app.isPackaged
@@ -24,8 +25,16 @@ const BROWSER_ENGINES_DIR = isDev
   ? path.join(__dirname, '..', '..', '..', 'browser')
   : path.join(path.dirname(app.getPath('exe')), 'browser')
 
+// Chrome for Testing 下载目录
+const CHROME_ENGINES_DIR = isDev
+  ? path.join(__dirname, '..', '..', '..', 'chrome-engines')
+  : path.join(path.dirname(app.getPath('exe')), 'chrome-engines')
+
+const CHROME_VERSIONS_CACHE_FILE = path.join(DATA_DIR, 'chrome-versions-cache.json')
+
 let mainWindow = null
 const runningBrowsers = new Map() // id -> ChildProcess
+const downloadingChrome = new Map() // version -> { abortController, progress }
 
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -475,6 +484,243 @@ ipcMain.handle('showOpenDialog', async (event, options) => {
     filters: options.filters || [{ name: 'CRX Files', extensions: ['crx'] }]
   })
   return result
+})
+
+// ============ Chrome for Testing 版本管理 ============
+
+// 获取 Chrome for Testing 可用版本列表
+ipcMain.handle('getChromeVersions', async () => {
+  try {
+    // 检查缓存（24小时内有效）
+    if (fs.existsSync(CHROME_VERSIONS_CACHE_FILE)) {
+      const cache = readJSON(CHROME_VERSIONS_CACHE_FILE, {})
+      if (cache.timestamp && Date.now() - cache.timestamp < 24 * 60 * 60 * 1000) {
+        return { data: cache.versions, fromCache: true }
+      }
+    }
+
+    // 从 Google 获取最新版本列表
+    const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    const json = await response.json()
+
+    // 提取有 win64 下载的版本，取最近 50 个
+    const versions = []
+    for (const item of json.versions.reverse()) {
+      const win64Download = item.downloads?.chrome?.find(
+        d => d.platform === 'win64' && d.channel === 'stable'
+      )
+      if (win64Download) {
+        versions.push({
+          version: item.version,
+          downloaded: false,
+          downloadUrl: win64Download.url
+        })
+      }
+      if (versions.length >= 50) break
+    }
+
+    // 检查哪些已下载
+    ensureDir(CHROME_ENGINES_DIR)
+    const downloadedDirs = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name)
+
+    for (const v of versions) {
+      v.downloaded = downloadedDirs.includes(v.version)
+    }
+
+    // 写入缓存
+    writeJSON(CHROME_VERSIONS_CACHE_FILE, { versions, timestamp: Date.now() })
+
+    return { data: versions, fromCache: false }
+  } catch (e) {
+    console.error('getChromeVersions error:', e)
+    return { data: [], error: e.message }
+  }
+})
+
+// 获取已下载的 Chrome 引擎列表
+ipcMain.handle('getDownloadedChromeEngines', async () => {
+  try {
+    ensureDir(CHROME_ENGINES_DIR)
+    const entries = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+    const engines = []
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const engineDir = path.join(CHROME_ENGINES_DIR, entry.name)
+      const hasChrome = fs.existsSync(path.join(engineDir, 'chrome.exe'))
+      const hasCamoufox = fs.existsSync(path.join(engineDir, 'camoufox.exe'))
+      if (hasChrome || hasCamoufox) {
+        engines.push({
+          version: entry.name,
+          path: engineDir,
+          exe: hasChrome ? 'chrome.exe' : 'camoufox.exe'
+        })
+      }
+    }
+    return { data: engines }
+  } catch (e) {
+    return { data: [], error: e.message }
+  }
+})
+
+// 下载 Chrome for Testing 版本
+ipcMain.handle('downloadChromeEngine', async (event, { version, downloadUrl }) => {
+  if (downloadingChrome.has(version)) {
+    return { success: false, error: '正在下载中' }
+  }
+
+  const targetDir = path.join(CHROME_ENGINES_DIR, version)
+  const tempDir = path.join(CHROME_ENGINES_DIR, `_temp_${version}`)
+  const zipFile = path.join(CHROME_ENGINES_DIR, `_temp_${version}.zip`)
+
+  try {
+    ensureDir(CHROME_ENGINES_DIR)
+    ensureDir(tempDir)
+
+    const abortController = { aborted: false }
+    downloadingChrome.set(version, { abortController, progress: 0 })
+
+    // 通知前端开始下载
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('chromeDownloadProgress', { version, progress: 0, status: 'downloading' })
+    }
+
+    // 使用 net 模块下载（支持 Electron 环境）
+    const request = net.request(downloadUrl)
+
+    await new Promise((resolve, reject) => {
+      request.on('response', (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}`))
+          return
+        }
+
+        const totalBytes = parseInt(response.headers['content-length']?.[0] || '0', 10)
+        let receivedBytes = 0
+
+        const writeStream = fs.createWriteStream(zipFile)
+
+        response.on('data', (chunk) => {
+          if (abortController.aborted) {
+            request.abort()
+            writeStream.destroy()
+            reject(new Error('下载已取消'))
+            return
+          }
+
+          writeStream.write(chunk)
+          receivedBytes += chunk.length
+
+          const progress = totalBytes > 0 ? Math.round((receivedBytes / totalBytes) * 100) : 0
+          const entry = downloadingChrome.get(version)
+          if (entry) entry.progress = progress
+
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('chromeDownloadProgress', { version, progress, status: 'downloading' })
+          }
+        })
+
+        response.on('end', () => {
+          writeStream.end(() => resolve())
+        })
+
+        response.on('error', (err) => {
+          writeStream.destroy()
+          reject(err)
+        })
+      })
+
+      request.on('error', reject)
+      request.end()
+    })
+
+    // 解压
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('chromeDownloadProgress', { version, progress: 100, status: 'extracting' })
+    }
+
+    const zip = new AdmZip(zipFile)
+    zip.extractAllTo(tempDir, true)
+
+    // 移动 chrome-win64 子目录内容到目标目录
+    const chromeDir = path.join(tempDir, 'chrome-win64')
+    if (fs.existsSync(chromeDir)) {
+      ensureDir(targetDir)
+      // 复制所有文件到目标目录
+      const copyDir = (src, dest) => {
+        const entries = fs.readdirSync(src, { withFileTypes: true })
+        for (const entry of entries) {
+          const srcPath = path.join(src, entry.name)
+          const destPath = path.join(dest, entry.name)
+          if (entry.isDirectory()) {
+            ensureDir(destPath)
+            copyDir(srcPath, destPath)
+          } else {
+            fs.copyFileSync(srcPath, destPath)
+          }
+        }
+      }
+      copyDir(chromeDir, targetDir)
+    }
+
+    // 清理临时文件
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+      fs.rmSync(zipFile, { recursive: true, force: true })
+    } catch {}
+
+    downloadingChrome.delete(version)
+
+    // 通知前端下载完成
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('chromeDownloadProgress', { version, progress: 100, status: 'completed' })
+    }
+
+    return { success: true, path: targetDir }
+  } catch (e) {
+    // 清理
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+      fs.rmSync(zipFile, { recursive: true, force: true })
+    } catch {}
+
+    downloadingChrome.delete(version)
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('chromeDownloadProgress', { version, progress: 0, status: 'failed', error: e.message })
+    }
+
+    return { success: false, error: e.message }
+  }
+})
+
+// 取消下载
+ipcMain.handle('cancelChromeDownload', async (event, version) => {
+  const download = downloadingChrome.get(version)
+  if (download) {
+    download.abortController.aborted = true
+    downloadingChrome.delete(version)
+    return { success: true }
+  }
+  return { success: false, error: '未找到下载任务' }
+})
+
+// 删除已下载的 Chrome 引擎
+ipcMain.handle('deleteChromeEngine', async (event, version) => {
+  try {
+    const targetDir = path.join(CHROME_ENGINES_DIR, version)
+    if (fs.existsSync(targetDir)) {
+      fs.rmSync(targetDir, { recursive: true, force: true })
+    }
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
 })
 
 // ============ App Lifecycle ============

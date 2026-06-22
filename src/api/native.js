@@ -38,7 +38,12 @@ export async function chromeSendTimeout(name, timeout = 2000, ...params) {
     getExtensions: () => api.getExtensions(),
     installExtension: data => api.installExtension(data),
     uninstallExtension: extId => api.uninstallExtension(extId),
-    toggleExtension: extId => api.toggleExtension(extId)
+    toggleExtension: extId => api.toggleExtension(extId),
+    getChromeVersions: () => api.getChromeVersions(),
+    getDownloadedChromeEngines: () => api.getDownloadedChromeEngines(),
+    downloadChromeEngine: data => api.downloadChromeEngine(data),
+    cancelChromeDownload: version => api.cancelChromeDownload(version),
+    deleteChromeEngine: version => api.deleteChromeEngine(version)
   }
 
   console.log(`chrome.send("${name}", `, args, `)`)

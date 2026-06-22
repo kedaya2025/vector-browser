@@ -10,6 +10,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getBrowserVersion: () => ipcRenderer.invoke('getBrowserVersion'),
   getEngineList: () => ipcRenderer.invoke('getEngineList'),
 
+  // Chrome for Testing 版本管理
+  getChromeVersions: () => ipcRenderer.invoke('getChromeVersions'),
+  getDownloadedChromeEngines: () => ipcRenderer.invoke('getDownloadedChromeEngines'),
+  downloadChromeEngine: data => ipcRenderer.invoke('downloadChromeEngine', data),
+  cancelChromeDownload: version => ipcRenderer.invoke('cancelChromeDownload', version),
+  deleteChromeEngine: version => ipcRenderer.invoke('deleteChromeEngine', version),
+  onChromeDownloadProgress: callback => {
+    ipcRenderer.on('chromeDownloadProgress', (event, data) => callback(data))
+  },
+
   // 分组管理
   getGroupList: () => ipcRenderer.invoke('getGroupList'),
   setGroupList: data => ipcRenderer.invoke('setGroupList', data),

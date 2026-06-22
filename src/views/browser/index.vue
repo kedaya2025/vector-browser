@@ -165,8 +165,6 @@
       </el-table-column>
     </el-table>
 
-
-
     <el-drawer
       :title="$t(dialogStatus == 'create' ? 'browser.add' : 'browser.edit')"
       :visible.sync="dialogFormVisible"
@@ -201,9 +199,11 @@
                     </el-radio-group>
                   </el-form-item>
                   <el-form-item :label="$t('browser.version')">
-                    <el-select v-model="form.chrome_version" :placeholder="$t('browser.select')">
-                      <el-option v-for="item in Versions" :key="item" :value="item" />
-                    </el-select>
+                    <ChromeVersionSelector
+                      v-model="form.chrome_version"
+                      :placeholder="$t('browser.select')"
+                      @change="handleVersionChange"
+                    />
                   </el-form-item>
                   <el-form-item :label="$t('browser.proxy.setting')">
                     <el-radio-group v-model="form.proxy.mode">
@@ -736,11 +736,11 @@ import {
 import TimeZones from '@/utils/timezones.json'
 import Languages from '@/utils/languages.json'
 import SSL from '@/utils/ssl.json'
-import Versions from '@/utils/versions.json'
 import uaFullVersions from '@/utils/ua-full-versions.json'
 import WebGLRenders from '@/utils/webgl.json'
 import { getFontList } from '@/utils/fonts'
 import { compareVersions } from 'compare-versions'
+import ChromeVersionSelector from '@/components/ChromeVersionSelector.vue'
 
 let IPGeo = {}
 let fontList = []
@@ -750,16 +750,11 @@ let chromeVer = ''
 let tooltipTimer
 const chromiumCoreVer =
   Number(navigator.userAgentData.brands.find(item => item.brand === 'Chromium')?.version) || 117
-const coreVersions = Array.from(new Set(Versions.map(item => Number(item.split('.')[0]))))
-for (let i = Math.max(...coreVersions) + 1; i <= chromiumCoreVer; i++) {
-  coreVersions.unshift(i)
-  Versions.unshift(`${i}.0.0.0`)
-}
 
 export default {
   name: 'ComplexTable',
   components: {
-    // Pagination
+    ChromeVersionSelector
   },
   directives: { waves },
   filters: {
@@ -943,7 +938,6 @@ export default {
       TimeZones,
       Languages,
       SSL,
-      Versions: coreVersions,
       cookieFormat: `[{
         "name": "cookie1",
         "value": "1",
@@ -996,20 +990,19 @@ export default {
       this.form.screen.height = parseInt(wh[1])
     },
     'form.chrome_version'(val) {
-      if (val === '默认') {
-        val = chromiumCoreVer
-        this.form.ua.mode = 0
-      } else {
-        this.form.ua.mode = 1
-      }
+      if (!val) return
+
+      // 新版本格式是完整版本号如 "120.0.6099.291"
+      const majorVer = Number(val.split('.')[0])
+
       this.form['sec-ch-ua'].value.forEach(item => {
         if (item.brand === 'Chromium') {
-          item.version = val
+          item.version = majorVer
         }
       })
 
-      const curVers = Versions.filter(item => Number(item.split('.')[0]) === val)
-      chromeVer = curVers[random.int(0, curVers.length - 1)]
+      // 使用完整版本号生成 UA
+      chromeVer = val
       this.form.ua.value = genUserAgent(osVer, chromeVer)
       this.form['ua-full-version'].value = getUaFullVersion(uaFullVersions, chromeVer)
     },
@@ -1028,16 +1021,6 @@ export default {
       }
 
       this.form.ua.value = genUserAgent(osVer, chromeVer)
-
-      let vers = Array.from(new Set(Versions.map(item => Number(item.split('.')[0]))))
-      if (val === 'Win 7' || val === 'Win 8') {
-        vers = vers.filter(item => item <= 109)
-      }
-      vers.unshift('默认')
-      this.Versions = vers
-      if (!vers.includes(this.form.chrome_version)) {
-        this.form.chrome_version = vers[0]
-      }
     },
     'form.webgl.vendor': {
       handler(val) {
@@ -1148,6 +1131,21 @@ export default {
       await updateRuningState()
       this.listLoading = false
     },
+    handleVersionChange(version) {
+      // 版本变化时自动更新 UA 等指纹信息
+      if (!version) return
+      const majorVer = Number(version.split('.')[0])
+      chromeVer = version
+
+      this.form['sec-ch-ua'].value.forEach(item => {
+        if (item.brand === 'Chromium') {
+          item.version = majorVer
+        }
+      })
+
+      this.form.ua.value = genUserAgent(osVer, chromeVer)
+      this.form['ua-full-version'].value = getUaFullVersion(uaFullVersions, chromeVer)
+    },
     handleFilter() {
       this.listQuery.page = 1
       this.searchList()
@@ -1186,7 +1184,7 @@ export default {
         name: '',
         group: this.$t('group.default'),
         os: 'Win 11',
-        chrome_version: '默认',
+        chrome_version: '',
         proxy: {
           mode: 0,
           value: '',
@@ -1413,8 +1411,7 @@ export default {
         changed = true
       }
       if (data['ua-full-version'] === undefined) {
-        const chrome_version_num = chrome_version === '默认' ? chromiumCoreVer : chrome_version
-        const chromeVer = Versions.find(item => Number(item.split('.')[0]) === chrome_version_num)
+        const chromeVer = data.chrome_version || chrome_version || `${chromiumCoreVer}.0.0.0`
         data['ua-full-version'] = {
           mode: 1,
           value: getUaFullVersion(uaFullVersions, chromeVer)
@@ -1755,13 +1752,10 @@ export default {
       this.dialogVisible = false
     },
     updateChromeVer(val) {
-      if (val === '默认') {
-        val = chromiumCoreVer
-      }
-      const curVers = Versions.filter(item => Number(item.split('.')[0]) === val)
-      this.chromeVer = curVers[random.int(0, curVers.length - 1)]
-      const UaValue = genUserAgent(osVer, this.chromeVer)
-      const UaFullVersion = getUaFullVersion(uaFullVersions, this.chromeVer)
+      // 新版本格式直接使用完整版本号
+      const chromeVer = val || `${chromiumCoreVer}.0.0.0`
+      const UaValue = genUserAgent(osVer, chromeVer)
+      const UaFullVersion = getUaFullVersion(uaFullVersions, chromeVer)
       return {
         ua: UaValue,
         uaFullVersion: UaFullVersion

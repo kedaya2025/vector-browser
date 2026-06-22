@@ -97,13 +97,26 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="IP" width="200px">
+      <el-table-column label="IP" width="240px">
         <template slot-scope="{ row }">
-          <span v-if="row.ipInfo && row.ipInfo.ip">
-            {{ row.ipInfo.ip }}
-            <el-tag size="mini" type="info" style="margin-left: 4px">{{ row.ipInfo.country }}</el-tag>
-          </span>
-          <span v-else style="color: #666">未查询</span>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span>
+              <span v-if="row.ipInfo && row.ipInfo.ip">
+                {{ row.ipInfo.ip }}
+                <el-tag size="mini" type="info" style="margin-left: 4px">{{ row.ipInfo.country }}</el-tag>
+              </span>
+              <span v-else style="color: #666">未查询</span>
+            </span>
+            <el-button
+              type="text"
+              size="mini"
+              :loading="row.ipLoading"
+              @click="handleRefreshIp(row)"
+              style="color: #00FF38; font-size: 14px;"
+            >
+              <i v-if="!row.ipLoading" class="el-icon-refresh" />
+            </el-button>
+          </div>
         </template>
       </el-table-column>
       <el-table-column
@@ -1513,6 +1526,11 @@ export default {
           await chromeSend('setBrowserList', data).catch(() => {})
         }
       }
+    },
+    async handleRefreshIp(row) {
+      this.$set(row, 'ipLoading', true)
+      await this.fetchAndSaveIp(row)
+      this.$set(row, 'ipLoading', false)
     },
     onReRandomComputerName() {
       this.form['device-name'].value = genRandomComputerName()

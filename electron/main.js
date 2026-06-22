@@ -548,6 +548,15 @@ ipcMain.handle('showOpenDialog', async (event, options) => {
 
 // ============ Chrome for Testing 版本管理 ============
 
+function getDownloadedVersionDirs() {
+  ensureDir(BROWSER_ENGINES_DIR)
+  try {
+    return fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name)
+  } catch { return [] }
+}
+
 // 获取 Chrome for Testing 可用版本列表
 ipcMain.handle('getChromeVersions', async () => {
   console.log('[ChromeVersions] 开始获取版本列表...')
@@ -556,13 +565,18 @@ ipcMain.handle('getChromeVersions', async () => {
     if (fs.existsSync(CHROME_VERSIONS_CACHE_FILE)) {
       const cache = readJSON(CHROME_VERSIONS_CACHE_FILE, {})
       if (cache.timestamp && Date.now() - cache.timestamp < 60 * 60 * 1000 && cache.versions?.length > 0) {
+        // 即使使用缓存，也要重新检查文件系统更新 downloaded 状态
+        const downloadedDirs = getDownloadedVersionDirs()
+        for (const v of cache.versions) {
+          v.downloaded = downloadedDirs.includes(v.version)
+        }
         console.log('[ChromeVersions] 使用缓存，版本数量:', cache.versions.length)
         return { data: cache.versions, fromCache: true }
       }
     }
 
-    // 从 Google 获取版本列表
-    const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
+    // 从 Google 获取稳定版列表（per-milestone 只含 stable）
+    const url = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-per-milestone-with-downloads.json'
     console.log('[ChromeVersions] 请求:', url)
 
     const json = await new Promise((resolve, reject) => {
@@ -583,41 +597,34 @@ ipcMain.handle('getChromeVersions', async () => {
       req.on('timeout', () => { req.destroy(); reject(new Error('请求超时')) })
     })
 
-    // 提取有 win64 下载的稳定版，按大版本去重，取最新 20 个大版本
-    const allVersions = json.versions || []
-    const majorVersionMap = new Map() // major -> { version, downloadUrl }
-    for (let i = allVersions.length - 1; i >= 0; i--) {
-      const item = allVersions[i]
-      // 只保留 stable 通道版本（channel 为 "stable" 或空字符串）
+    // 此 API 返回 { milestones: { "136": { channel: "Stable", version: "...", downloads: {...} } } }
+    const milestones = json.milestones || {}
+    const versions = []
+    const sortedMilestones = Object.keys(milestones)
+      .map(Number)
+      .sort((a, b) => b - a)
+      .slice(0, 20)
+
+    for (const ms of sortedMilestones) {
+      const item = milestones[ms]
+      if (!item) continue
       const ch = (item.channel || '').toLowerCase()
       if (ch && ch !== 'stable') continue
 
       const win64Download = item.downloads?.chrome?.find(d => d.platform === 'win64')
       if (!win64Download) continue
 
-      const major = item.version.split('.')[0]
-      if (!majorVersionMap.has(major)) {
-        majorVersionMap.set(major, {
-          version: item.version,
-          downloaded: false,
-          downloadUrl: win64Download.url
-        })
-      }
-      if (majorVersionMap.size >= 20) break
+      versions.push({
+        version: item.version,
+        downloaded: false,
+        downloadUrl: win64Download.url
+      })
     }
 
-    const versions = Array.from(majorVersionMap.values())
-    console.log('[ChromeVersions] 大版本去重后数量:', versions.length)
-    console.log('[ChromeVersions] 获取到版本数:', versions.length)
+    console.log('[ChromeVersions] 获取到稳定版数量:', versions.length)
 
     // 检查哪些已下载
-    ensureDir(BROWSER_ENGINES_DIR)
-    let downloadedDirs = []
-    try {
-      downloadedDirs = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
-        .filter(d => d.isDirectory())
-        .map(d => d.name)
-    } catch {}
+    const downloadedDirs = getDownloadedVersionDirs()
     console.log('[ChromeVersions] 已下载:', downloadedDirs)
 
     for (const v of versions) {

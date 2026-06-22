@@ -488,6 +488,30 @@ ipcMain.handle('showOpenDialog', async (event, options) => {
 
 // ============ Chrome for Testing 版本管理 ============
 
+// 内置版本列表作为备选
+const BUILTIN_CHROME_VERSIONS = [
+  { version: '131.0.6778.85', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.85/win64/chrome-win64.zip' },
+  { version: '131.0.6778.86', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.86/win64/chrome-win64.zip' },
+  { version: '130.0.6723.91', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.91/win64/chrome-win64.zip' },
+  { version: '130.0.6723.58', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.58/win64/chrome-win64.zip' },
+  { version: '129.0.6668.100', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/129.0.6668.100/win64/chrome-win64.zip' },
+  { version: '129.0.6668.71', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/129.0.6668.71/win64/chrome-win64.zip' },
+  { version: '128.0.6613.113', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.113/win64/chrome-win64.zip' },
+  { version: '128.0.6613.84', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.84/win64/chrome-win64.zip' },
+  { version: '127.0.6533.88', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.88/win64/chrome-win64.zip' },
+  { version: '127.0.6533.72', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.72/win64/chrome-win64.zip' },
+  { version: '126.0.6478.126', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.126/win64/chrome-win64.zip' },
+  { version: '126.0.6478.56', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.56/win64/chrome-win64.zip' },
+  { version: '125.0.6422.112', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/125.0.6422.112/win64/chrome-win64.zip' },
+  { version: '125.0.6422.60', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/125.0.6422.60/win64/chrome-win64.zip' },
+  { version: '124.0.6367.207', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.207/win64/chrome-win64.zip' },
+  { version: '124.0.6367.91', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.91/win64/chrome-win64.zip' },
+  { version: '123.0.6312.105', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.105/win64/chrome-win64.zip' },
+  { version: '123.0.6312.58', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.58/win64/chrome-win64.zip' },
+  { version: '122.0.6261.128', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.128/win64/chrome-win64.zip' },
+  { version: '122.0.6261.69', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.69/win64/chrome-win64.zip' }
+]
+
 // 获取 Chrome for Testing 可用版本列表
 ipcMain.handle('getChromeVersions', async () => {
   console.log('[ChromeVersions] 开始获取版本列表...')
@@ -495,75 +519,79 @@ ipcMain.handle('getChromeVersions', async () => {
     // 检查缓存（24小时内有效）
     if (fs.existsSync(CHROME_VERSIONS_CACHE_FILE)) {
       const cache = readJSON(CHROME_VERSIONS_CACHE_FILE, {})
-      if (cache.timestamp && Date.now() - cache.timestamp < 24 * 60 * 60 * 1000) {
-        console.log('[ChromeVersions] 使用缓存，版本数量:', cache.versions?.length)
-        return { data: cache.versions || [], fromCache: true }
+      if (cache.timestamp && Date.now() - cache.timestamp < 24 * 60 * 60 * 1000 && cache.versions?.length > 0) {
+        console.log('[ChromeVersions] 使用缓存，版本数量:', cache.versions.length)
+        return { data: cache.versions, fromCache: true }
       }
     }
 
-    // 从 Google 获取最新版本列表（使用 https 模块）
-    const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
-    console.log('[ChromeVersions] 请求 URL:', url)
+    // 尝试从 Google 获取最新版本列表
+    let remoteVersions = []
+    try {
+      const url = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json'
+      console.log('[ChromeVersions] 请求 URL:', url)
 
-    const json = await new Promise((resolve, reject) => {
-      https.get(url, { rejectUnauthorized: false }, (res) => {
-        console.log('[ChromeVersions] 响应状态码:', res.statusCode)
-        if (res.statusCode !== 200) {
-          reject(new Error(`HTTP ${res.statusCode}`))
-          return
-        }
-        let body = ''
-        res.on('data', (chunk) => {
-          body += chunk
-        })
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(body))
-          } catch (e) {
-            reject(e)
+      const json = await new Promise((resolve, reject) => {
+        https.get(url, { rejectUnauthorized: false }, (res) => {
+          console.log('[ChromeVersions] 响应状态码:', res.statusCode)
+          if (res.statusCode !== 200) {
+            reject(new Error(`HTTP ${res.statusCode}`))
+            return
           }
-        })
-        res.on('error', reject)
-      }).on('error', reject)
-    })
+          let body = ''
+          res.on('data', (chunk) => { body += chunk })
+          res.on('end', () => {
+            try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
+          })
+          res.on('error', reject)
+        }).on('error', reject)
+      })
 
-    // 提取有 win64 下载的版本，取最近 50 个
-    const versions = []
-    console.log('[ChromeVersions] 总版本数:', json.versions?.length)
-    for (const item of json.versions.reverse()) {
-      const win64Download = item.downloads?.chrome?.find(
-        d => d.platform === 'win64' && d.channel === 'stable'
-      )
-      if (win64Download) {
-        versions.push({
-          version: item.version,
-          downloaded: false,
-          downloadUrl: win64Download.url
-        })
+      // 提取有 win64 下载的版本
+      const channels = json.channels || {}
+      for (const [channelName, channelData] of Object.entries(channels)) {
+        const version = channelData.version
+        const downloads = channelData.downloads?.chrome || []
+        const win64Download = downloads.find(d => d.platform === 'win64')
+        if (win64Download && version) {
+          remoteVersions.push({
+            version,
+            downloaded: false,
+            downloadUrl: win64Download.url
+          })
+        }
       }
-      if (versions.length >= 50) break
+      console.log('[ChromeVersions] 远程获取版本数:', remoteVersions.length)
+    } catch (e) {
+      console.warn('[ChromeVersions] 远程获取失败，使用内置列表:', e.message)
     }
-    console.log('[ChromeVersions] 筛选后版本数:', versions.length)
+
+    // 合并远程和内置版本（远程优先）
+    const allVersions = remoteVersions.length > 0 ? remoteVersions : BUILTIN_CHROME_VERSIONS
 
     // 检查哪些已下载
     ensureDir(CHROME_ENGINES_DIR)
-    const downloadedDirs = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name)
+    let downloadedDirs = []
+    try {
+      downloadedDirs = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
+        .filter(d => d.isDirectory())
+        .map(d => d.name)
+    } catch {}
     console.log('[ChromeVersions] 已下载目录:', downloadedDirs)
 
-    for (const v of versions) {
+    for (const v of allVersions) {
       v.downloaded = downloadedDirs.includes(v.version)
     }
 
     // 写入缓存
-    writeJSON(CHROME_VERSIONS_CACHE_FILE, { versions, timestamp: Date.now() })
+    writeJSON(CHROME_VERSIONS_CACHE_FILE, { versions: allVersions, timestamp: Date.now() })
 
-    console.log('[ChromeVersions] 返回版本数据，数量:', versions.length)
-    return { data: versions, fromCache: false }
+    console.log('[ChromeVersions] 返回版本数据，数量:', allVersions.length)
+    return { data: allVersions, fromCache: false }
   } catch (e) {
     console.error('[ChromeVersions] 错误:', e.message)
-    return { data: [], error: e.message }
+    // 返回内置版本列表作为最终备选
+    return { data: BUILTIN_CHROME_VERSIONS, error: e.message }
   }
 })
 

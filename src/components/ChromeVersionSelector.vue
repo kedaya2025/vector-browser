@@ -141,12 +141,9 @@ export default {
 .el-select-dropdown.chrome-version-dropdown {
   background: #1a1a1a !important;
   border: none !important;
-  border-radius: 4px !important;
-  box-shadow: 0 0 0 1px #00FF38 !important;
 
   .el-select-dropdown__list {
     padding: 4px 0 !important;
-    border-radius: 4px !important;
   }
 
   .el-select-dropdown__item {
@@ -195,8 +192,5 @@ export default {
     }
   }
 
-  .popper__arrow {
-    display: none !important;
-  }
 }
 </style>

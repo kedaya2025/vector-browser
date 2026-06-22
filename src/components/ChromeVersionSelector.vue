@@ -146,14 +146,24 @@ export default {
   methods: {
     async loadVersions() {
       this.loading = true
+      console.log('[ChromeVersionSelector] 开始加载版本列表...')
       try {
         const ret = await chromeSend('getChromeVersions')
+        console.log('[ChromeVersionSelector] API 返回:', ret)
         if (ret && ret.data) {
           this.versions = ret.data
+          console.log('[ChromeVersionSelector] 版本数量:', this.versions.length)
+        } else {
+          console.warn('[ChromeVersionSelector] 无数据返回')
+          this.versions = []
+        }
+        if (ret && ret.error) {
+          this.$message.warning('加载版本列表时出错: ' + ret.error)
         }
       } catch (e) {
-        console.error('Failed to load Chrome versions:', e)
+        console.error('[ChromeVersionSelector] 加载失败:', e)
         this.$message.error('加载版本列表失败: ' + e.message)
+        this.versions = []
       }
       this.loading = false
     },

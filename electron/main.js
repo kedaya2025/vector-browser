@@ -1,8 +1,8 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const https = require('https')
 const { spawn } = require('child_process')
-const { net } = require('electron')
 const AdmZip = require('adm-zip')
 
 const isDev = !app.isPackaged
@@ -490,43 +490,46 @@ ipcMain.handle('showOpenDialog', async (event, options) => {
 
 // 获取 Chrome for Testing 可用版本列表
 ipcMain.handle('getChromeVersions', async () => {
+  console.log('[ChromeVersions] 开始获取版本列表...')
   try {
     // 检查缓存（24小时内有效）
     if (fs.existsSync(CHROME_VERSIONS_CACHE_FILE)) {
       const cache = readJSON(CHROME_VERSIONS_CACHE_FILE, {})
       if (cache.timestamp && Date.now() - cache.timestamp < 24 * 60 * 60 * 1000) {
-        return { data: cache.versions, fromCache: true }
+        console.log('[ChromeVersions] 使用缓存，版本数量:', cache.versions?.length)
+        return { data: cache.versions || [], fromCache: true }
       }
     }
 
-    // 从 Google 获取最新版本列表（使用 net 模块）
+    // 从 Google 获取最新版本列表（使用 https 模块）
     const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
+    console.log('[ChromeVersions] 请求 URL:', url)
+
     const json = await new Promise((resolve, reject) => {
-      const request = net.request(url)
-      let body = ''
-      request.on('response', (response) => {
-        if (response.statusCode !== 200) {
-          reject(new Error(`HTTP ${response.statusCode}`))
+      https.get(url, { rejectUnauthorized: false }, (res) => {
+        console.log('[ChromeVersions] 响应状态码:', res.statusCode)
+        if (res.statusCode !== 200) {
+          reject(new Error(`HTTP ${res.statusCode}`))
           return
         }
-        response.on('data', (chunk) => {
-          body += chunk.toString()
+        let body = ''
+        res.on('data', (chunk) => {
+          body += chunk
         })
-        response.on('end', () => {
+        res.on('end', () => {
           try {
             resolve(JSON.parse(body))
           } catch (e) {
             reject(e)
           }
         })
-        response.on('error', reject)
-      })
-      request.on('error', reject)
-      request.end()
+        res.on('error', reject)
+      }).on('error', reject)
     })
 
     // 提取有 win64 下载的版本，取最近 50 个
     const versions = []
+    console.log('[ChromeVersions] 总版本数:', json.versions?.length)
     for (const item of json.versions.reverse()) {
       const win64Download = item.downloads?.chrome?.find(
         d => d.platform === 'win64' && d.channel === 'stable'
@@ -540,12 +543,14 @@ ipcMain.handle('getChromeVersions', async () => {
       }
       if (versions.length >= 50) break
     }
+    console.log('[ChromeVersions] 筛选后版本数:', versions.length)
 
     // 检查哪些已下载
     ensureDir(CHROME_ENGINES_DIR)
     const downloadedDirs = fs.readdirSync(CHROME_ENGINES_DIR, { withFileTypes: true })
       .filter(d => d.isDirectory())
       .map(d => d.name)
+    console.log('[ChromeVersions] 已下载目录:', downloadedDirs)
 
     for (const v of versions) {
       v.downloaded = downloadedDirs.includes(v.version)
@@ -554,9 +559,10 @@ ipcMain.handle('getChromeVersions', async () => {
     // 写入缓存
     writeJSON(CHROME_VERSIONS_CACHE_FILE, { versions, timestamp: Date.now() })
 
+    console.log('[ChromeVersions] 返回版本数据，数量:', versions.length)
     return { data: versions, fromCache: false }
   } catch (e) {
-    console.error('getChromeVersions error:', e)
+    console.error('[ChromeVersions] 错误:', e.message)
     return { data: [], error: e.message }
   }
 })

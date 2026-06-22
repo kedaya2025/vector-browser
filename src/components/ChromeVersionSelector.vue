@@ -219,11 +219,11 @@ export default {
     }
   }
 
-  .version-enabled {
-    color: #ffffff !important;
+  .el-select-dropdown__item .version-enabled {
+    color: #FFFFFF !important;
   }
 
-  .version-disabled {
+  .el-select-dropdown__item .version-disabled {
     color: #666666 !important;
   }
 

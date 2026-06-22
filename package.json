@@ -24,7 +24,8 @@
     "productName": "Vector Browser",
     "asar": false,
     "directories": {
-      "output": "build"
+      "output": "build",
+      "buildResources": "build"
     },
     "files": [
       "package.json",

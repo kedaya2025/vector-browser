@@ -1,0 +1,49 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build portable exe
+        run: npx electron-builder --win portable
+
+      - name: Build installer (NSIS)
+        run: npx electron-builder --win nsis
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Vector Browser ${{ steps.version.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            build/VectorBrowser-*.exe

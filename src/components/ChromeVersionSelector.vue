@@ -25,12 +25,11 @@
 
       <el-button
         type="success"
-        :loading="!!downloadingVersion"
-        :disabled="!selectedVersion || isDownloaded(selectedVersion)"
+        :disabled="!selectedVersion || isDownloaded(selectedVersion) || !!downloadingVersion"
         class="dl-btn"
         @click="handleDownloadSelected"
       >
-        下载
+        {{ downloadingVersion ? '下载中...' : '下载' }}
       </el-button>
     </div>
 

@@ -1,7 +1,7 @@
 {
-  "name": "io-browser",
+  "name": "vector-browser",
   "version": "1.0.0",
-  "description": "IO Browser - Browser environment management tool",
+  "description": "Vector Browser - Browser environment management tool",
   "main": "electron/main.js",
   "author": "",
   "scripts": {
@@ -20,8 +20,8 @@
     "dist": "npm run kill:running-apps && npm run build && electron-builder --win nsis && node scripts/fix-icons.js"
   },
   "build": {
-    "appId": "com.ibrowser.app",
-    "productName": "iBrowser",
+    "appId": "com.vectorbrowser.app",
+    "productName": "Vector Browser",
     "asar": false,
     "directories": {
       "output": "build"
@@ -58,13 +58,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "iBrowser",
+      "shortcutName": "Vector Browser",
       "installerIcon": "static/logo.ico",
       "uninstallerIcon": "static/logo.ico",
       "installerHeaderIcon": "static/logo.ico"
     },
     "portable": {
-      "artifactName": "iBrowser-${version}-portable.exe"
+      "artifactName": "VectorBrowser-${version}-portable.exe"
     }
   },
   "dependencies": {

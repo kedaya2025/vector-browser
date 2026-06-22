@@ -16,7 +16,7 @@ function killProcess(imageName) {
 }
 
 if (process.platform === 'win32') {
-  ;['iBrowser.exe', 'IOBrowser.exe', 'electron.exe'].forEach(killProcess)
+  ;['Vector Browser.exe', 'iBrowser.exe', 'IOBrowser.exe', 'electron.exe'].forEach(killProcess)
 } else {
   console.log('[kill-running-apps] skip on non-windows platform')
 }

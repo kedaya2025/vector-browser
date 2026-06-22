@@ -76,12 +76,12 @@
 
       <el-tab-pane label="关于" name="about">
         <div class="settings-section">
-          <h3>关于 IO Browser</h3>
+          <h3>关于 Vector Browser</h3>
           <p class="desc">版本信息与项目链接</p>
 
           <div class="about-info" style="margin-top: 20px">
             <el-descriptions :column="1" border>
-              <el-descriptions-item label="应用名称">IO Browser</el-descriptions-item>
+              <el-descriptions-item label="应用名称">Vector Browser</el-descriptions-item>
               <el-descriptions-item label="版本号">v1.0.0</el-descriptions-item>
               <el-descriptions-item label="技术栈">Electron + Vue 2 + Element UI</el-descriptions-item>
               <el-descriptions-item label="开源协议">MIT License</el-descriptions-item>

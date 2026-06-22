@@ -1,4 +1,4 @@
-# IO Browser
+# Vector Browser
 
 基于 Chromium 的浏览器环境管理工具，支持多环境隔离与指纹配置管理。
 

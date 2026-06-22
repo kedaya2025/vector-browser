@@ -57,7 +57,7 @@ function createWindow() {
     height: 900,
     minWidth: 1000,
     minHeight: 600,
-    title: 'iBrowser',
+    title: 'Vector Browser',
     icon: isDev
       ? path.join(__dirname, '..', 'static', 'logo.ico')
       : path.join(path.dirname(app.getPath('exe')), 'resources', 'logo.ico'),

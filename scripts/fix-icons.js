@@ -2,7 +2,7 @@ const { rcedit } = require('rcedit')
 const path = require('path')
 
 const iconPath = path.join(__dirname, '..', 'static', 'logo.ico')
-const unpackedExe = path.join(__dirname, '..', 'build', 'win-unpacked', 'iBrowser.exe')
+const unpackedExe = path.join(__dirname, '..', 'build', 'win-unpacked', 'Vector Browser.exe')
 
 async function fixIcons() {
   try {

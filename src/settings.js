@@ -1,5 +1,5 @@
 module.exports = {
-  title: 'IO Browser',
+  title: 'Vector Browser',
 
   /**
    * @type {string | array} 'production' | ['production', 'development']

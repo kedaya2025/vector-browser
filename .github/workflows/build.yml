@@ -28,7 +28,7 @@ jobs:
         run: npm run build
 
       - name: Build unpacked directory
-        run: npx electron-builder --win --dir
+        run: npx electron-builder --win --dir --publish never
 
       - name: Zip unpacked directory
         shell: pwsh
@@ -36,7 +36,7 @@ jobs:
           Compress-Archive -Path "build\win-unpacked\*" -DestinationPath "build\VectorBrowser-${{ github.ref_name }}-win64.zip"
 
       - name: Build NSIS installer
-        run: npx electron-builder --win nsis
+        run: npx electron-builder --win nsis --publish never
 
       - name: Upload artifacts (debug)
         if: failure()

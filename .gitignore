@@ -3,10 +3,10 @@ node_modules/
 
 # Build output
 dist/
-release/
+build/
 
-# Browser engines (large binaries)
-browser/
+# Browser engines (large binaries downloaded separately)
+/browser/
 
 # Runtime data
 data/

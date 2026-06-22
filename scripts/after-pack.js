@@ -13,7 +13,7 @@ module.exports = async function(context) {
 
   // Windows 平台名称可能是 'windows' 或 'win32'
   if (platform === 'windows' || platform === 'win32' || process.platform === 'win32') {
-    const exePath = path.join(appOutDir, 'IOBrowser.exe')
+    const exePath = path.join(appOutDir, 'iBrowser.exe')
     const iconPath = path.join(__dirname, '..', 'static', 'logo.ico')
 
     console.log(`[fix-icons] Setting icon on ${exePath}...`)

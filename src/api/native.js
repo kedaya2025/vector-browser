@@ -5,12 +5,12 @@ const api = window.electronAPI
 
 window.cr = {}
 cr.__callbacks = {}
-cr.webUIResponse = function(cb, status, data) {
+cr.webUIResponse = function (cb, status, data) {
   const callbackFn = cr.__callbacks[cb]
   callbackFn && callbackFn(data)
 }
 
-window.updateLaunchState = function() {
+window.updateLaunchState = function () {
   updateRuningState()
 }
 
@@ -25,20 +25,20 @@ export async function chromeSendTimeout(name, timeout = 2000, ...params) {
   // 映射 chrome.send 命令到 electronAPI 方法
   const cmdMap = {
     getBrowserList: () => api.getBrowserList(),
-    setBrowserList: (data) => api.setBrowserList(data),
-    deleteBrowser: (id) => api.deleteBrowser(id),
-    launchBrowser: (id) => api.launchBrowser(id),
+    setBrowserList: data => api.setBrowserList(data),
+    deleteBrowser: id => api.deleteBrowser(id),
+    launchBrowser: id => api.launchBrowser(id),
     getRuningBrowser: () => api.getRuningBrowser(),
     getBrowserVersion: () => api.getBrowserVersion(),
     getGlobalData: () => api.getGlobalData(),
-    setGlobalData: (jsonStr) => api.setGlobalData(jsonStr),
-    checkProxy: (url) => api.checkProxy(url),
+    setGlobalData: jsonStr => api.setGlobalData(jsonStr),
+    checkProxy: url => api.checkProxy(url),
     getGroupList: () => api.getGroupList(),
-    setGroupList: (data) => api.setGroupList(data),
+    setGroupList: data => api.setGroupList(data),
     getExtensions: () => api.getExtensions(),
-    installExtension: (data) => api.installExtension(data),
-    uninstallExtension: (extId) => api.uninstallExtension(extId),
-    toggleExtension: (extId) => api.toggleExtension(extId),
+    installExtension: data => api.installExtension(data),
+    uninstallExtension: extId => api.uninstallExtension(extId),
+    toggleExtension: extId => api.toggleExtension(extId)
   }
 
   console.log(`chrome.send("${name}", `, args, `)`)
@@ -109,7 +109,11 @@ export async function addBrowser(item, defaultName) {
 export async function updateBrowser(item) {
   const list = await getBrowserList()
   const idx = list.findIndex(it => it.id === item.id)
-  list[idx] = item
+  if (idx === -1) {
+    list.push(item)
+  } else {
+    list[idx] = item
+  }
 
   const data = { users: list }
   localStorage.setItem('list', JSON.stringify(data))
@@ -124,7 +128,9 @@ export async function deleteBrowser(id) {
   const list = await getBrowserList()
   const idx = list.findIndex(it => it.id === id)
 
-  list.splice(idx, 1)
+  if (idx !== -1) {
+    list.splice(idx, 1)
+  }
 
   const data = { users: list }
   localStorage.setItem('list', JSON.stringify(data))
@@ -171,7 +177,11 @@ export async function addGroup(item, defaultName) {
 export async function updateGroup(item) {
   const list = await getGroupList()
   const idx = list.findIndex(it => it.id === item.id)
-  list[idx] = item
+  if (idx === -1) {
+    list.push(item)
+  } else {
+    list[idx] = item
+  }
 
   localStorage.setItem('group', JSON.stringify(list))
   await chromeSend('setGroupList', list).catch(console.warn)
@@ -181,7 +191,9 @@ export async function deleteGroup(id) {
   const list = await getGroupList()
   const idx = list.findIndex(it => it.id === id)
 
-  list.splice(idx, 1)
+  if (idx !== -1) {
+    list.splice(idx, 1)
+  }
 
   localStorage.setItem('group', JSON.stringify(list))
   await chromeSend('setGroupList', list).catch(console.warn)

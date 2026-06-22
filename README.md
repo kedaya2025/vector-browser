@@ -15,7 +15,6 @@
 
 - **前端**：Vue 2 + Element UI
 - **桌面框架**：Electron
-- **浏览器引擎**：Chromium (CloakBrowser)
 
 ## 开发
 

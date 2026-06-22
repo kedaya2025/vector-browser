@@ -12,19 +12,22 @@
     "preview": "node build/index.js --preview",
     "new": "plop",
     "svgo": "svgo -f src/icons/svg --config=src/icons/svgo.yml",
+    "kill:running-apps": "node scripts/kill-running-apps.js",
     "electron:dev": "concurrently \"vue-cli-service serve\" \"wait-on http://localhost:9527 && electron .\"",
-    "electron:build": "npm run build && electron-builder --dir",
-    "electron:build:portable": "npm run build && electron-builder --win portable",
+    "electron:build": "npm run kill:running-apps && npm run build && electron-builder --dir",
+    "electron:build:portable": "npm run kill:running-apps && npm run build && electron-builder --win portable",
     "fix:icons": "node scripts/fix-icons.js",
-    "dist": "npm run build && electron-builder --win nsis && node scripts/fix-icons.js"
+    "dist": "npm run kill:running-apps && npm run build && electron-builder --win nsis && node scripts/fix-icons.js"
   },
   "build": {
-    "appId": "com.io-browser.app",
-    "productName": "IOBrowser",
+    "appId": "com.ibrowser.app",
+    "productName": "iBrowser",
+    "asar": false,
     "directories": {
-      "output": "release"
+      "output": "build"
     },
     "files": [
+      "package.json",
       "dist/**/*",
       "electron/**/*",
       "static/**/*"
@@ -55,13 +58,13 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "IO Browser",
+      "shortcutName": "iBrowser",
       "installerIcon": "static/logo.ico",
       "uninstallerIcon": "static/logo.ico",
       "installerHeaderIcon": "static/logo.ico"
     },
     "portable": {
-      "artifactName": "IOBrowser-${version}-portable.exe"
+      "artifactName": "iBrowser-${version}-portable.exe"
     }
   },
   "dependencies": {

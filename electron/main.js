@@ -53,7 +53,7 @@ function createWindow() {
     height: 900,
     minWidth: 1000,
     minHeight: 600,
-    title: 'IO Browser',
+    title: 'iBrowser',
     icon: isDev
       ? path.join(__dirname, '..', 'static', 'logo.ico')
       : path.join(path.dirname(app.getPath('exe')), 'resources', 'logo.ico'),
@@ -63,8 +63,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false,
-    },
+      webSecurity: false
+    }
   })
 
   // 完全移除原生菜单栏
@@ -74,14 +74,18 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:9527')
     // mainWindow.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'server', 'index.html'))
+    const indexFile = path.join(__dirname, '..', 'dist', 'index.html')
+    console.log('Loading UI from:', indexFile, 'exists=', fs.existsSync(indexFile))
+    mainWindow.loadFile(indexFile)
   }
 
   mainWindow.on('closed', () => {
     mainWindow = null
     // 关闭所有浏览器进程
     for (const [id, proc] of runningBrowsers) {
-      try { proc.kill() } catch {}
+      try {
+        proc.kill()
+      } catch {}
     }
     runningBrowsers.clear()
   })
@@ -122,7 +126,7 @@ ipcMain.handle('getExtensions', async () => {
 })
 
 // 从本地 CRX 文件安装插件
-ipcMain.handle('installExtension', async (event, { crxPath,fileName }) => {
+ipcMain.handle('installExtension', async (event, { crxPath, fileName }) => {
   try {
     // 读取 CRX 文件
     if (!fs.existsSync(crxPath)) {
@@ -134,7 +138,12 @@ ipcMain.handle('installExtension', async (event, { crxPath,fileName }) => {
     // CRX v3 格式: 前16字节是头部 (4魔数 + 4版本 + 4头部大小 + 4头部大小)
     // 跳过头部，解压 ZIP 部分
     let zipBuffer = crxBuffer
-    if (crxBuffer[0] === 0x43 && crxBuffer[1] === 0x72 && crxBuffer[2] === 0x32 && crxBuffer[3] === 0x34) {
+    if (
+      crxBuffer[0] === 0x43 &&
+      crxBuffer[1] === 0x72 &&
+      crxBuffer[2] === 0x32 &&
+      crxBuffer[3] === 0x34
+    ) {
       // "Cr24" 魔数，CRX 格式
       const version = crxBuffer.readUInt32LE(4)
       const headerSize = crxBuffer.readUInt32LE(8)
@@ -242,7 +251,9 @@ ipcMain.handle('toggleExtension', async (event, extId) => {
 ipcMain.handle('deleteBrowser', async (event, id) => {
   // 先关闭运行中的进程
   if (runningBrowsers.has(id)) {
-    try { runningBrowsers.get(id).kill() } catch {}
+    try {
+      runningBrowsers.get(id).kill()
+    } catch {}
     runningBrowsers.delete(id)
   }
   // 删除 profile 目录
@@ -274,7 +285,7 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
       chromeExe = path.join(engineDir, 'camoufox.exe')
     }
   }
-  
+
   // 如果没有指定引擎或引擎不存在，使用默认引擎（第一个可用的）
   if (!chromeExe) {
     const engines = []
@@ -303,7 +314,7 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
     `--user-data-dir=${profileDir}`,
     '--no-first-run',
     '--disable-default-apps',
-    '--disable-popup-blocking',
+    '--disable-popup-blocking'
   ]
 
   // 加载已启用的插件
@@ -317,16 +328,40 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
   if (profile) {
     // 代理
     if (profile.proxy && profile.proxy.host) {
-      const { protocol = 'http', host, port, username, password } = profile.proxy
-      let proxyUrl = `${protocol}://${host}:${port}`
+      const { protocol = 'http', host, port } = profile.proxy
+      const proxyUrl = `${protocol}://${host}:${port}`
       args.push(`--proxy-server=${proxyUrl}`)
     }
+
+    if (profile.userAgent) {
+      args.push(`--user-agent=${profile.userAgent}`)
+    }
+
+    if (profile.language) {
+      const lang = String(profile.language).split(',')[0].trim()
+      if (lang) {
+        args.push(`--lang=${lang}`)
+      }
+    }
+
+    if (profile.screen) {
+      const [width, height] = String(profile.screen)
+        .split('x')
+        .map(item => parseInt(item.trim(), 10))
+      if (width && height) {
+        args.push(`--window-size=${width},${height}`)
+      }
+    }
+  }
+
+  if (profile && profile.homepage) {
+    args.push(profile.homepage)
   }
 
   // 启动进程
   const child = spawn(chromeExe, args, {
     detached: false,
-    stdio: 'ignore',
+    stdio: 'ignore'
   })
 
   runningBrowsers.set(id, child)
@@ -337,7 +372,7 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
       mainWindow.webContents.send('browserClosed', id)
     }
   })
-  child.on('error', (err) => {
+  child.on('error', err => {
     console.error(`Browser ${id} launch error:`, err)
     runningBrowsers.delete(id)
   })
@@ -358,7 +393,7 @@ ipcMain.handle('getBrowserVersion', async () => {
 // 获取浏览器引擎列表
 ipcMain.handle('getEngineList', async () => {
   const engines = []
-  
+
   if (!fs.existsSync(BROWSER_ENGINES_DIR)) {
     return engines
   }
@@ -367,9 +402,9 @@ ipcMain.handle('getEngineList', async () => {
   const entries = fs.readdirSync(BROWSER_ENGINES_DIR, { withFileTypes: true })
   for (const entry of entries) {
     if (!entry.isDirectory()) continue
-    
+
     const engineDir = path.join(BROWSER_ENGINES_DIR, entry.name)
-    
+
     // 查找可执行文件：优先 chrome.exe，其次 camoufox.exe
     let exeName = null
     if (fs.existsSync(path.join(engineDir, 'chrome.exe'))) {
@@ -377,7 +412,7 @@ ipcMain.handle('getEngineList', async () => {
     } else if (fs.existsSync(path.join(engineDir, 'camoufox.exe'))) {
       exeName = 'camoufox.exe'
     }
-    
+
     if (exeName) {
       engines.push({
         name: entry.name,
@@ -388,7 +423,7 @@ ipcMain.handle('getEngineList', async () => {
       })
     }
   }
-  
+
   return engines
 })
 
@@ -413,7 +448,7 @@ ipcMain.handle('checkProxy', async (event, proxyUrl) => {
     // 简单检测：用 fetch 测试
     const resp = await fetch('http://httpbin.org/ip', {
       // 注意：实际代理检测需要更复杂的实现
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(5000)
     })
     const data = await resp.json()
     return { success: true, ip: data.origin }

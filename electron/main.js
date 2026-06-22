@@ -491,25 +491,45 @@ ipcMain.handle('showOpenDialog', async (event, options) => {
 // 内置版本列表作为备选
 const BUILTIN_CHROME_VERSIONS = [
   { version: '131.0.6778.85', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.85/win64/chrome-win64.zip' },
-  { version: '131.0.6778.86', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.86/win64/chrome-win64.zip' },
   { version: '130.0.6723.91', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.91/win64/chrome-win64.zip' },
-  { version: '130.0.6723.58', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/130.0.6723.58/win64/chrome-win64.zip' },
   { version: '129.0.6668.100', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/129.0.6668.100/win64/chrome-win64.zip' },
-  { version: '129.0.6668.71', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/129.0.6668.71/win64/chrome-win64.zip' },
   { version: '128.0.6613.113', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.113/win64/chrome-win64.zip' },
-  { version: '128.0.6613.84', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/128.0.6613.84/win64/chrome-win64.zip' },
   { version: '127.0.6533.88', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.88/win64/chrome-win64.zip' },
-  { version: '127.0.6533.72', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.72/win64/chrome-win64.zip' },
   { version: '126.0.6478.126', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.126/win64/chrome-win64.zip' },
-  { version: '126.0.6478.56', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/126.0.6478.56/win64/chrome-win64.zip' },
   { version: '125.0.6422.112', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/125.0.6422.112/win64/chrome-win64.zip' },
-  { version: '125.0.6422.60', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/125.0.6422.60/win64/chrome-win64.zip' },
   { version: '124.0.6367.207', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.207/win64/chrome-win64.zip' },
-  { version: '124.0.6367.91', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.91/win64/chrome-win64.zip' },
   { version: '123.0.6312.105', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.105/win64/chrome-win64.zip' },
-  { version: '123.0.6312.58', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.58/win64/chrome-win64.zip' },
   { version: '122.0.6261.128', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.128/win64/chrome-win64.zip' },
-  { version: '122.0.6261.69', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/122.0.6261.69/win64/chrome-win64.zip' }
+  { version: '121.0.6167.184', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/121.0.6167.184/win64/chrome-win64.zip' },
+  { version: '120.0.6099.224', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/120.0.6099.224/win64/chrome-win64.zip' },
+  { version: '119.0.6045.199', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/119.0.6045.199/win64/chrome-win64.zip' },
+  { version: '118.0.5993.118', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/118.0.5993.118/win64/chrome-win64.zip' },
+  { version: '117.0.5938.149', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/117.0.5938.149/win64/chrome-win64.zip' },
+  { version: '116.0.5845.180', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/116.0.5845.180/win64/chrome-win64.zip' },
+  { version: '115.0.5790.180', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/115.0.5790.180/win64/chrome-win64.zip' },
+  { version: '114.0.5735.133', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/114.0.5735.133/win64/chrome-win64.zip' },
+  { version: '113.0.5672.126', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/113.0.5672.126/win64/chrome-win64.zip' },
+  { version: '112.0.5615.138', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/112.0.5615.138/win64/chrome-win64.zip' },
+  { version: '111.0.5563.146', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/111.0.5563.146/win64/chrome-win64.zip' },
+  { version: '110.0.5481.177', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/110.0.5481.177/win64/chrome-win64.zip' },
+  { version: '109.0.5414.120', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/109.0.5414.120/win64/chrome-win64.zip' },
+  { version: '108.0.5359.124', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/108.0.5359.124/win64/chrome-win64.zip' },
+  { version: '107.0.5304.121', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/107.0.5304.121/win64/chrome-win64.zip' },
+  { version: '106.0.5249.119', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/106.0.5249.119/win64/chrome-win64.zip' },
+  { version: '105.0.5195.127', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/105.0.5195.127/win64/chrome-win64.zip' },
+  { version: '104.0.5112.102', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/104.0.5112.102/win64/chrome-win64.zip' },
+  { version: '103.0.5060.134', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/103.0.5060.134/win64/chrome-win64.zip' },
+  { version: '102.0.5005.63', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/102.0.5005.63/win64/chrome-win64.zip' },
+  { version: '101.0.4951.67', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/101.0.4951.67/win64/chrome-win64.zip' },
+  { version: '100.0.4896.127', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/100.0.4896.127/win64/chrome-win64.zip' },
+  { version: '99.0.4844.84', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/99.0.4844.84/win64/chrome-win64.zip' },
+  { version: '98.0.4758.102', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/98.0.4758.102/win64/chrome-win64.zip' },
+  { version: '97.0.4692.99', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/97.0.4692.99/win64/chrome-win64.zip' },
+  { version: '96.0.4664.110', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/96.0.4664.110/win64/chrome-win64.zip' },
+  { version: '95.0.4635.59', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/95.0.4635.59/win64/chrome-win64.zip' },
+  { version: '94.0.4606.81', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/94.0.4606.81/win64/chrome-win64.zip' },
+  { version: '93.0.4577.82', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/93.0.4577.82/win64/chrome-win64.zip' },
+  { version: '92.0.4515.159', downloadUrl: 'https://storage.googleapis.com/chrome-for-testing-public/92.0.4515.159/win64/chrome-win64.zip' }
 ]
 
 // 获取 Chrome for Testing 可用版本列表
@@ -525,14 +545,14 @@ ipcMain.handle('getChromeVersions', async () => {
       }
     }
 
-    // 尝试从 Google 获取最新版本列表
+    // 尝试从 Google 获取全部版本列表（大文件，可能超时）
     let remoteVersions = []
     try {
-      const url = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json'
-      console.log('[ChromeVersions] 请求 URL:', url)
+      const url = 'https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json'
+      console.log('[ChromeVersions] 请求完整版本列表:', url)
 
       const json = await new Promise((resolve, reject) => {
-        https.get(url, { rejectUnauthorized: false }, (res) => {
+        const req = https.get(url, { rejectUnauthorized: false, timeout: 15000 }, (res) => {
           console.log('[ChromeVersions] 响应状态码:', res.statusCode)
           if (res.statusCode !== 200) {
             reject(new Error(`HTTP ${res.statusCode}`))
@@ -544,18 +564,21 @@ ipcMain.handle('getChromeVersions', async () => {
             try { resolve(JSON.parse(body)) } catch (e) { reject(e) }
           })
           res.on('error', reject)
-        }).on('error', reject)
+        })
+        req.on('error', reject)
+        req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
       })
 
-      // 提取有 win64 下载的版本
-      const channels = json.channels || {}
-      for (const [channelName, channelData] of Object.entries(channels)) {
-        const version = channelData.version
-        const downloads = channelData.downloads?.chrome || []
-        const win64Download = downloads.find(d => d.platform === 'win64')
-        if (win64Download && version) {
+      // 提取有 win64 下载的版本，取最近 50 个
+      const versions = json.versions || []
+      for (let i = versions.length - 1; i >= 0 && remoteVersions.length < 50; i--) {
+        const item = versions[i]
+        const win64Download = item.downloads?.chrome?.find(
+          d => d.platform === 'win64' && d.channel === 'stable'
+        )
+        if (win64Download) {
           remoteVersions.push({
-            version,
+            version: item.version,
             downloaded: false,
             downloadUrl: win64Download.url
           })
@@ -566,7 +589,7 @@ ipcMain.handle('getChromeVersions', async () => {
       console.warn('[ChromeVersions] 远程获取失败，使用内置列表:', e.message)
     }
 
-    // 合并远程和内置版本（远程优先）
+    // 合并远程和内置版本（远程优先，去重）
     const allVersions = remoteVersions.length > 0 ? remoteVersions : BUILTIN_CHROME_VERSIONS
 
     // 检查哪些已下载
@@ -590,7 +613,6 @@ ipcMain.handle('getChromeVersions', async () => {
     return { data: allVersions, fromCache: false }
   } catch (e) {
     console.error('[ChromeVersions] 错误:', e.message)
-    // 返回内置版本列表作为最终备选
     return { data: BUILTIN_CHROME_VERSIONS, error: e.message }
   }
 })
@@ -642,24 +664,42 @@ ipcMain.handle('downloadChromeEngine', async (event, { version, downloadUrl }) =
       mainWindow.webContents.send('chromeDownloadProgress', { version, progress: 0, status: 'downloading' })
     }
 
-    // 使用 net 模块下载（支持 Electron 环境）
-    const request = net.request(downloadUrl)
+    // 使用 https 模块下载
+    const totalBytes = await new Promise((resolve, reject) => {
+      https.get(downloadUrl, { rejectUnauthorized: false }, (res) => {
+        resolve(parseInt(res.headers['content-length'] || '0', 10))
+        res.destroy()
+      }).on('error', reject)
+    })
 
     await new Promise((resolve, reject) => {
-      request.on('response', (response) => {
-        if (response.statusCode !== 200) {
+      https.get(downloadUrl, { rejectUnauthorized: false }, (response) => {
+        if (response.statusCode !== 200 && response.statusCode !== 302) {
           reject(new Error(`HTTP ${response.statusCode}`))
           return
         }
 
-        const totalBytes = parseInt(response.headers['content-length']?.[0] || '0', 10)
+        // 处理重定向
+        if (response.statusCode === 302 && response.headers.location) {
+          response.destroy()
+          https.get(response.headers.location, { rejectUnauthorized: false }, (redirectRes) => {
+            handleDownloadResponse(redirectRes)
+          }).on('error', reject)
+          return
+        }
+
+        handleDownloadResponse(response)
+      }).on('error', reject)
+
+      function handleDownloadResponse(response) {
+        const actualTotal = parseInt(response.headers['content-length'] || '0', 10) || totalBytes
         let receivedBytes = 0
 
         const writeStream = fs.createWriteStream(zipFile)
 
         response.on('data', (chunk) => {
           if (abortController.aborted) {
-            request.abort()
+            response.destroy()
             writeStream.destroy()
             reject(new Error('下载已取消'))
             return
@@ -668,7 +708,7 @@ ipcMain.handle('downloadChromeEngine', async (event, { version, downloadUrl }) =
           writeStream.write(chunk)
           receivedBytes += chunk.length
 
-          const progress = totalBytes > 0 ? Math.round((receivedBytes / totalBytes) * 100) : 0
+          const progress = actualTotal > 0 ? Math.round((receivedBytes / actualTotal) * 100) : 0
           const entry = downloadingChrome.get(version)
           if (entry) entry.progress = progress
 
@@ -685,10 +725,7 @@ ipcMain.handle('downloadChromeEngine', async (event, { version, downloadUrl }) =
           writeStream.destroy()
           reject(err)
         })
-      })
-
-      request.on('error', reject)
-      request.end()
+      }
     })
 
     // 解压

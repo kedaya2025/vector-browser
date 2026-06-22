@@ -521,6 +521,8 @@ ipcMain.handle('launchBrowser', async (event, idStr) => {
     const port = await startEnvServer()
     const token = generateEnvToken(id)
     envPageUrl = `http://127.0.0.1:${port}/environment.html?id=${id}&token=${token}`
+    // 等待服务器完全就绪
+    await new Promise(r => setTimeout(r, 300))
   } catch (e) {
     console.error('[LaunchBrowser] Env server start failed:', e.message)
   }

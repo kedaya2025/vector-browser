@@ -124,13 +124,13 @@
             :type="row.isRunning ? 'success' : 'primary'"
             :icon="row.isRunning ? '' : 'el-icon-video-play'"
             :loading="row.runLoading"
-            :disabled="row.isRunning || (!row._engineReady && row.runLoading)"
+            :disabled="row.isRunning"
             :class="{ 'btn-running': row.isRunning }"
             @click="handleLaunch(row)"
           >
             {{
               row.runLoading
-                ? (row._engineReady === false ? '下载中' : $t('browser.launching'))
+                ? $t('browser.launching')
                 : row.isRunning
                   ? '运行中'
                   : $t('browser.launch')
@@ -197,6 +197,15 @@
                       v-model="form.chrome_version"
                       @change="handleVersionChange"
                     />
+                  </el-form-item>
+                  <el-form-item label="IP查询源">
+                    <el-select v-model="form.ipQuerySource" clearable placeholder="使用全局默认" style="width: 240px">
+                      <el-option label="使用全局默认" value="" />
+                      <el-option label="ip-api.com" value="ip-api.com" />
+                      <el-option label="ipapi.co" value="ipapi.co" />
+                      <el-option label="ipwho.is" value="ipwho.is" />
+                      <el-option label="freeipapi.com" value="freeipapi.com" />
+                    </el-select>
                   </el-form-item>
                   <el-form-item :label="$t('browser.cookie.jsonStr')" prop="cookie.jsonStr">
                     <el-switch v-model="form.cookie.mode" :active-value="1" :inactive-value="0" />
@@ -1135,6 +1144,7 @@ export default {
         group: this.$t('group.default'),
         os: 'Win 11',
         chrome_version: '',
+        ipQuerySource: '',
         proxy: {
           mode: 0,
           value: '',
@@ -1461,34 +1471,36 @@ export default {
       const engines = ret?.data || []
       const downloaded = engines.some(e => e.version === row.chrome_version)
       if (!downloaded) {
-        row.runLoading = true
-        row._engineReady = false
         this.$message.warning(`Chrome ${row.chrome_version} 尚未下载，请先下载内核`)
-        // 等待下载完成
-        const checkInterval = setInterval(async () => {
-          const r = await chromeSend('getDownloadedChromeEngines').catch(() => ({ data: [] }))
-          const engs = r?.data || []
-          const ready = engs.some(e => e.version === row.chrome_version)
-          if (ready) {
-            clearInterval(checkInterval)
-            row._engineReady = true
-            this.doLaunch(row)
-          }
-        }, 3000)
         return
       }
       this.doLaunch(row)
     },
     async doLaunch(row) {
-      chromeSend('launchBrowser', row.id.toString())
-      row.runLoading = true
-      row._engineReady = true
+      this.$set(row, 'runLoading', true)
+      this.$set(row, '_engineReady', true)
+      await chromeSend('launchBrowser', row.id.toString()).catch(() => {})
+      // 启动后轮询运行状态，一旦检测到运行中就清除 runLoading
+      const checkRunning = setInterval(async () => {
+        await updateRuningState()
+        if (row.isRunning) {
+          clearInterval(checkRunning)
+          this.$set(row, 'runLoading', false)
+        }
+      }, 1000)
+      // 10秒超时保护
+      setTimeout(() => {
+        clearInterval(checkRunning)
+        this.$set(row, 'runLoading', false)
+      }, 10000)
       // 自动查询 IP
       this.fetchAndSaveIp(row)
     },
     async fetchAndSaveIp(row) {
       const store = await getGlobalData().catch(() => ({}))
-      const preferredSource = store.preferredSource || undefined
+      const globalSource = store.preferredSource || 'ip-api.com'
+      const instanceSource = row.ipQuerySource || undefined
+      const preferredSource = instanceSource || globalSource
       const ret = await chromeSend('fetchIpInfo', preferredSource).catch(() => null)
       if (ret && ret.success) {
         this.$set(row, 'ipInfo', { ip: ret.ip, country: ret.country, countryCode: ret.countryCode })

@@ -161,6 +161,18 @@ export default {
     background: #00cc2e !important;
     border-color: #00cc2e !important;
   }
+
+  &.is-disabled {
+    background: #333 !important;
+    border-color: #555 !important;
+    color: #888 !important;
+    cursor: not-allowed;
+
+    &:hover {
+      background: #333 !important;
+      border-color: #555 !important;
+    }
+  }
 }
 
 .download-bar {
@@ -208,11 +220,11 @@ export default {
   }
 
   .version-enabled {
-    color: #ffffff;
+    color: #ffffff !important;
   }
 
   .version-disabled {
-    color: #666666;
+    color: #666666 !important;
   }
 
   .tag-ok {

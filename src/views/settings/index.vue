@@ -117,7 +117,7 @@ export default {
     return {
       activeTab: 'ip-query',
       apiLink: '',
-      preferredSource: '',
+      preferredSource: 'ip-api.com',
       Channel: 'virtualbrowser',
       engines: [],
       testResult: null,
@@ -137,8 +137,12 @@ export default {
       try {
         const store = await getGlobalData()
         this.apiLink = store.apiLink || ''
-        this.preferredSource = store.preferredSource || ''
+        this.preferredSource = store.preferredSource || 'ip-api.com'
         this.Channel = store.Channel || 'virtualbrowser'
+        // 如果全局设置中没有 preferredSource，自动设置默认值
+        if (!store.preferredSource) {
+          await setGlobalData('preferredSource', 'ip-api.com')
+        }
         if (store.settings) {
           this.settings = { ...this.settings, ...store.settings }
         }

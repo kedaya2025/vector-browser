@@ -21,7 +21,10 @@
   "build": {
     "appId": "com.vectorbrowser.app",
     "productName": "Vector Browser",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "static/**/*"
+    ],
     "directories": {
       "output": "build",
       "buildResources": "build"

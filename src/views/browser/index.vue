@@ -1021,12 +1021,14 @@ export default {
 
     // 监听浏览器关闭事件，实时更新按钮状态
     window.electronAPI.onBrowserClosed?.(id => {
-      const item = (this.list || []).find(b => b.id === Number(id) || b.id === id)
-      if (item) {
-        this.$set(item, 'isRunning', false)
-        this.$set(item, 'runLoading', false)
-      }
+      // 直接调用 updateRuningState 刷新整个列表，避免 $set 和 .map() 对象引用不一致
+      updateRuningState()
     })
+
+    // 兜底轮询：每 3 秒检查运行状态，确保按钮不会卡住
+    this._statusPolling = setInterval(() => {
+      updateRuningState()
+    }, 3000)
 
     // 监听 Chrome 引擎下载进度
     window.electronAPI.onChromeDownloadProgress?.(data => {
@@ -1114,6 +1116,12 @@ export default {
       id: 0,
       name: this.$t('group.default')
     })
+  },
+  beforeDestroy() {
+    if (this._statusPolling) {
+      clearInterval(this._statusPolling)
+      this._statusPolling = null
+    }
   },
   methods: {
     async getList() {
@@ -1538,11 +1546,11 @@ export default {
           this.$set(row, 'runLoading', false)
         }
       }, 1000)
-      // 10秒超时保护
+      // 15秒超时保护（兜底，正常情况下 global polling 会处理）
       setTimeout(() => {
         clearInterval(checkRunning)
         this.$set(row, 'runLoading', false)
-      }, 10000)
+      }, 15000)
       // 自动查询 IP
       this.fetchAndSaveIp(row)
     },

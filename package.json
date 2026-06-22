@@ -15,7 +15,6 @@
     "kill:running-apps": "node scripts/kill-running-apps.js",
     "electron:dev": "concurrently \"vue-cli-service serve\" \"wait-on http://localhost:9527 && electron .\"",
     "electron:build": "npm run kill:running-apps && npm run build && electron-builder --dir",
-    "electron:build:portable": "npm run kill:running-apps && npm run build && electron-builder --win portable",
     "fix:icons": "node scripts/fix-icons.js",
     "dist": "npm run kill:running-apps && npm run build && electron-builder --win nsis && node scripts/fix-icons.js"
   },
@@ -63,9 +62,6 @@
       "installerIcon": "static/logo.ico",
       "uninstallerIcon": "static/logo.ico",
       "installerHeaderIcon": "static/logo.ico"
-    },
-    "portable": {
-      "artifactName": "VectorBrowser-${version}-portable.exe"
     }
   },
   "dependencies": {

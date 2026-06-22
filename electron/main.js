@@ -523,22 +523,27 @@ ipcMain.handle('getChromeVersions', async () => {
       req.on('timeout', () => { req.destroy(); reject(new Error('请求超时')) })
     })
 
-    // 提取有 win64 下载的版本，取最新的 20 个
+    // 提取有 win64 下载的版本，按大版本去重，取最新 20 个大版本
     const allVersions = json.versions || []
-    const versions = []
-    for (let i = allVersions.length - 1; i >= 0 && versions.length < 20; i--) {
+    const majorVersionMap = new Map() // major -> { version, downloadUrl }
+    for (let i = allVersions.length - 1; i >= 0; i--) {
       const item = allVersions[i]
-      const win64Download = item.downloads?.chrome?.find(
-        d => d.platform === 'win64'
-      )
-      if (win64Download) {
-        versions.push({
+      const win64Download = item.downloads?.chrome?.find(d => d.platform === 'win64')
+      if (!win64Download) continue
+
+      const major = item.version.split('.')[0]
+      if (!majorVersionMap.has(major)) {
+        majorVersionMap.set(major, {
           version: item.version,
           downloaded: false,
           downloadUrl: win64Download.url
         })
       }
+      if (majorVersionMap.size >= 20) break
     }
+
+    const versions = Array.from(majorVersionMap.values())
+    console.log('[ChromeVersions] 大版本去重后数量:', versions.length)
     console.log('[ChromeVersions] 获取到版本数:', versions.length)
 
     // 检查哪些已下载

@@ -39,53 +39,38 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="浏览器引擎" name="browser-engine">
-        <div class="settings-section">
-          <h3>浏览器引擎管理</h3>
-          <p class="desc">管理已安装的浏览器引擎</p>
-
-          <div class="engine-list" v-if="engines.length > 0">
-            <div v-for="engine in engines" :key="engine.dir" class="engine-item">
-              <div class="engine-info">
-                <span class="engine-name">{{ engine.name }}</span>
-                <span class="engine-path">{{ engine.exe }}</span>
-              </div>
-              <el-tag :type="engine.active ? 'success' : 'info'" size="small">
-                {{ engine.active ? '可用' : '未检测到' }}
-              </el-tag>
-            </div>
-          </div>
-          <el-empty v-else description="未检测到浏览器引擎" />
-        </div>
-      </el-tab-pane>
-
       <el-tab-pane label="通用设置" name="general">
         <div class="settings-section">
           <h3>通用设置</h3>
           <p class="desc">应用通用配置</p>
 
-          <el-form label-width="120px" style="max-width: 600px; margin-top: 20px">
+          <el-form label-width="140px" style="max-width: 600px; margin-top: 20px">
             <el-form-item label="启动时检查更新">
               <el-switch v-model="settings.checkUpdate" />
             </el-form-item>
             <el-form-item label="关闭时最小化到托盘">
               <el-switch v-model="settings.minimizeToTray" />
             </el-form-item>
-            <el-form-item label="默认浏览器引擎">
-              <el-select v-model="settings.defaultEngine" placeholder="请选择" style="width: 100%">
-                <el-option
-                  v-for="engine in engines"
-                  :key="engine.dir"
-                  :label="engine.name"
-                  :value="engine.dir"
-                />
-              </el-select>
-            </el-form-item>
 
             <el-form-item>
               <el-button type="primary" @click="saveGeneralSettings">保存设置</el-button>
             </el-form-item>
           </el-form>
+
+          <div style="margin-top: 30px">
+            <h3>已安装引擎</h3>
+            <p class="desc">当前可用的浏览器内核（通过 Chrome 版本选择器下载管理）</p>
+            <div class="engine-list" v-if="engines.length > 0">
+              <div v-for="engine in engines" :key="engine.dir" class="engine-item">
+                <div class="engine-info">
+                  <span class="engine-name">{{ engine.name }}</span>
+                  <span class="engine-path">{{ engine.exe }}</span>
+                </div>
+                <el-tag type="success" size="small">可用</el-tag>
+              </div>
+            </div>
+            <el-empty v-else description="暂无已安装引擎，请在创建浏览器时下载" :image-size="60" />
+          </div>
         </div>
       </el-tab-pane>
 
@@ -118,13 +103,11 @@ export default {
       activeTab: 'ip-query',
       apiLink: '',
       preferredSource: 'ip-api.com',
-      Channel: 'virtualbrowser',
       engines: [],
       testResult: null,
       settings: {
         checkUpdate: true,
-        minimizeToTray: false,
-        defaultEngine: ''
+        minimizeToTray: false
       }
     }
   },
@@ -138,8 +121,6 @@ export default {
         const store = await getGlobalData()
         this.apiLink = store.apiLink || ''
         this.preferredSource = store.preferredSource || 'ip-api.com'
-        this.Channel = store.Channel || 'virtualbrowser'
-        // 如果全局设置中没有 preferredSource，自动设置默认值
         if (!store.preferredSource) {
           await setGlobalData('preferredSource', 'ip-api.com')
         }
@@ -162,7 +143,6 @@ export default {
       try {
         await setGlobalData('apiLink', this.apiLink)
         await setGlobalData('preferredSource', this.preferredSource)
-        await setGlobalData('Channel', this.Channel)
         this.$message.success('IP 查询设置已保存')
       } catch (e) {
         this.$message.error('保存失败: ' + e.message)

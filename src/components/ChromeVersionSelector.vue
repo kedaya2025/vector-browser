@@ -9,35 +9,17 @@
       popper-class="chrome-version-dropdown"
       @change="handleChange"
     >
-      <div class="version-group-header">已下载</div>
       <el-option
-        v-for="item in downloadedVersions"
+        v-for="item in sortedVersions"
         :key="item.version"
         :value="item.version"
         :label="item.version"
+        :disabled="!item.downloaded"
       >
         <span>{{ item.version }}</span>
-        <span class="tag-downloaded">已下载</span>
-      </el-option>
-      <div v-if="downloadedVersions.length === 0" class="version-empty">暂无</div>
-
-      <div class="version-group-header">未下载</div>
-      <el-option
-        v-for="item in undownloadedVersions"
-        :key="item.version"
-        :value="item.version"
-        :label="item.version"
-        disabled
-      >
-        <span>{{ item.version }}</span>
-        <span
-          class="tag-download"
-          @click.stop="handleDownload(item)"
-        >
-          <template v-if="downloadingVersion === item.version">
-            {{ downloadProgress }}%
-          </template>
-          <template v-else>下载</template>
+        <span v-if="item.downloaded" class="tag-ok">已下载</span>
+        <span v-else class="tag-dl" @click.stop="handleDownload(item)">
+          {{ downloadingVersion === item.version ? downloadProgress + '%' : '下载' }}
         </span>
       </el-option>
     </el-select>
@@ -78,11 +60,11 @@ export default {
     }
   },
   computed: {
-    downloadedVersions() {
-      return this.versions.filter(v => v.downloaded)
-    },
-    undownloadedVersions() {
-      return this.versions.filter(v => !v.downloaded)
+    sortedVersions() {
+      return [...this.versions].sort((a, b) => {
+        if (a.downloaded !== b.downloaded) return b.downloaded - a.downloaded
+        return Number(b.version.split('.')[0]) - Number(a.version.split('.')[0])
+      })
     }
   },
   watch: {
@@ -157,44 +139,23 @@ export default {
 
 <style lang="scss">
 .chrome-version-dropdown {
-  .version-group-header {
-    padding: 8px 20px 4px;
-    font-size: 12px;
-    color: #909399;
-    font-weight: bold;
-  }
-
-  .version-empty {
-    padding: 6px 20px;
-    font-size: 12px;
-    color: #c0c4cc;
-  }
-
   .el-select-dropdown__item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
     height: 36px;
     line-height: 36px;
-
-    &.is-disabled {
-      cursor: default;
-      opacity: 1;
-    }
   }
 
-  .tag-downloaded {
+  .tag-ok {
     font-size: 12px;
     color: #67c23a;
-    white-space: nowrap;
   }
 
-  .tag-download {
+  .tag-dl {
     font-size: 12px;
     color: #409eff;
     cursor: pointer;
-    white-space: nowrap;
 
     &:hover {
       color: #66b1ff;

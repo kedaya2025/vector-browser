@@ -155,6 +155,11 @@ export default {
   color: #000 !important;
   font-weight: bold;
   flex-shrink: 0;
+  height: 40px !important;
+  line-height: 40px !important;
+  padding: 0 20px !important;
+  margin: 0 !important;
+  border-radius: 4px !important;
 
   &:hover {
     background: #00cc2e !important;

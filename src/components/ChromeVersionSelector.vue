@@ -139,12 +139,29 @@ export default {
 
 <style lang="scss">
 .chrome-version-dropdown {
+  background: #1a1a1a;
+  border: 1px solid #67c23a;
+
   .el-select-dropdown__item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     height: 36px;
     line-height: 36px;
+    color: #e0e0e0;
+
+    &.hover, &:hover {
+      background: #2a2a2a;
+    }
+
+    &.selected {
+      color: #67c23a;
+      font-weight: bold;
+    }
+
+    &.is-disabled {
+      color: #e0e0e0;
+    }
   }
 
   .tag-ok {
@@ -154,11 +171,19 @@ export default {
 
   .tag-dl {
     font-size: 12px;
-    color: #409eff;
+    color: #67c23a;
     cursor: pointer;
 
     &:hover {
-      color: #66b1ff;
+      color: #85ce61;
+    }
+  }
+
+  .popper__arrow {
+    border-bottom-color: #67c23a;
+
+    &::after {
+      border-bottom-color: #1a1a1a;
     }
   }
 }

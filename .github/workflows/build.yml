@@ -21,22 +21,22 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Install NSIS
-        run: choco install nsis -y
-
       - name: Install dependencies
         run: npm ci
 
       - name: Build frontend
         run: npm run build
 
-      - name: Build (NSIS + unpacked)
-        run: npx electron-builder --win nsis
+      - name: Build unpacked directory
+        run: npx electron-builder --win --dir
 
       - name: Zip unpacked directory
         shell: pwsh
         run: |
           Compress-Archive -Path "build\win-unpacked\*" -DestinationPath "build\VectorBrowser-${{ github.ref_name }}-win64.zip"
+
+      - name: Build NSIS installer
+        run: npx electron-builder --win nsis
 
       - name: Upload artifacts (debug)
         if: failure()

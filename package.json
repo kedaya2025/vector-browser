@@ -21,10 +21,7 @@
   "build": {
     "appId": "com.vectorbrowser.app",
     "productName": "Vector Browser",
-    "asar": true,
-    "asarUnpack": [
-      "static/**/*"
-    ],
+    "asar": false,
     "directories": {
       "output": "build",
       "buildResources": "build"
@@ -41,7 +38,6 @@
         "to": "logo.ico"
       }
     ],
-    "afterPack": "./scripts/after-pack.js",
     "win": {
       "icon": "static/logo.ico",
       "target": [

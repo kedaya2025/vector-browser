@@ -1,5 +1,9 @@
 # Vector Browser
 
+<p align="center">
+  <img src="static/Vector Browser.png" alt="Vector Browser" width="100%">
+</p>
+
 [![Build & Release](https://github.com/kedaya2025/vector-browser/actions/workflows/build.yml/badge.svg)](https://github.com/kedaya2025/vector-browser/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)]()

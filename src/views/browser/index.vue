@@ -253,17 +253,59 @@
                       style="width: 424px; margin-left: 10px"
                     />
                   </el-form-item>
-                  <el-form-item label="代理类型">
-                    <el-select v-model="form.proxyType" placeholder="请选择">
-                      <el-option label="默认" value="默认" />
-                      <el-option label="不使用代理" value="不使用代理" />
-                      <el-option label="HTTP" value="HTTP" />
-                      <el-option label="HTTPS" value="HTTPS" />
-                      <el-option label="SOCKS5" value="SOCKS5" />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="代理API链接">
-                    <el-input v-model="form.proxyAPI" placeholder="请输入" />
+                  <el-form-item :label="$t('browser.proxy.setting')">
+                    <el-radio-group v-model="form.proxy.mode">
+                      <el-radio-button :label="0">{{ $t('browser.default') }}</el-radio-button>
+                      <el-radio-button :label="1">{{ $t('browser.no_proxy') }}</el-radio-button>
+                      <el-radio-button :label="2">{{ $t('browser.custom') }}</el-radio-button>
+                    </el-radio-group>
+                    <div v-if="form.proxy.mode == 2" style="margin-top: 10px">
+                      <el-form-item :label="$t('browser.proxy.protocol')" label-width="70px">
+                        <el-select v-model="form.proxy.protocol" style="width: 100px">
+                          <el-option value="HTTP" />
+                          <el-option value="HTTPS" />
+                          <el-option value="SOCKS5" />
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item
+                        :label="$t('browser.proxy.host')"
+                        label-width="70px"
+                        prop="proxy.host"
+                      >
+                        <el-input v-model="form.proxy.host" style="max-width: 250px" />
+                        :
+                        <el-input
+                          v-model="form.proxy.port"
+                          style="width: 70px"
+                          :placeholder="$t('browser.proxy.port')"
+                        />
+                        <span style="font-size: 12px; margin-left: 10px; color: rgb(141, 133, 133)">
+                          可按'主机:端口:账号:密码'或'主机:端口'格式粘贴自动识别
+                        </span>
+                      </el-form-item>
+                      <el-form-item :label="$t('browser.proxy.user')" label-width="70px">
+                        <el-input v-model="form.proxy.user" style="max-width: 250px" />
+                      </el-form-item>
+                      <el-form-item :label="$t('browser.proxy.pass')" label-width="70px">
+                        <el-input v-model="form.proxy.pass" style="max-width: 250px" />
+                        &nbsp;
+                        <el-button
+                          type="primary"
+                          style="margin-left: 7px"
+                          :loading="checkProxyState.checking"
+                          @click="checkProxy"
+                        >
+                          检测{{ checkProxyState.checking ? '中' : '' }}
+                        </el-button>
+                      </el-form-item>
+                      <el-form-item :label="$t('browser.proxy.API')" label-width="70px">
+                        <el-input v-model="form.proxy.API" style="max-width: 250px" />
+                        &nbsp;
+                        <el-button type="primary" style="margin-left: 7px" @click="checkAPIProxy">
+                          提取代理
+                        </el-button>
+                      </el-form-item>
+                    </div>
                   </el-form-item>
                 </div>
               </el-timeline-item>
@@ -1201,8 +1243,6 @@ export default {
         os: 'Win 11',
         chrome_version: '',
         ipQuerySource: '',
-        proxyType: '默认',
-        proxyAPI: '',
         proxy: {
           mode: 0,
           value: '',
@@ -1352,17 +1392,6 @@ export default {
       this.$refs['dataForm'].validate(async (valid, result) => {
         if (valid) {
           this.form.timestamp = Date.now()
-          if (this.form.proxyAPI) {
-            this.form.proxy.API = this.form.proxyAPI
-            this.form.proxy.protocol = this.form.proxyType
-            this.form.proxy.mode = 2
-          }
-          if (this.form.proxyType === '默认') {
-            this.form.proxy.mode = 0
-          }
-          if (this.form.proxyType === '不使用代理') {
-            this.form.proxy.mode = 1
-          }
           this.preProcessData(this.form)
           await addBrowser(this.form, this.$t('browser.browser'))
 
@@ -1818,16 +1847,16 @@ export default {
         newEnvironmentData.ua.value = uaData.ua
         newEnvironmentData['ua-full-version'].value = uaData.uaFullVersion
 
-        if (this.form.proxyAPI) {
-          newEnvironmentData.proxy.API = this.form.proxyAPI
-          newEnvironmentData.proxy.protocol = this.form.proxyType
-          newEnvironmentData.proxy.mode = 2
-        }
         if (this.form.proxyType === '默认') {
           newEnvironmentData.proxy.mode = 0
-        }
-        if (this.form.proxyType === '不使用代理') {
+        } else if (this.form.proxyType === '不使用代理') {
           newEnvironmentData.proxy.mode = 1
+        } else {
+          newEnvironmentData.proxy.mode = 2
+          newEnvironmentData.proxy.protocol = this.form.proxyType
+          if (this.form.proxyAPI) {
+            newEnvironmentData.proxy.API = this.form.proxyAPI
+          }
         }
         this.preProcessData(newEnvironmentData)
         try {

@@ -8,7 +8,7 @@ const { spawn } = require('child_process')
 const AdmZip = require('adm-zip')
 
 const isDev = !app.isPackaged
-const VERSION = '1.0.0'
+const VERSION = '1.0.2'
 
 // 数据目录：便携模式下放在应用同级
 const DATA_DIR = isDev
@@ -792,7 +792,7 @@ ipcMain.handle('getChromeVersions', async () => {
         res.on('error', reject)
       })
       req.on('error', reject)
-      req.on('timeout', () => { req.destroy(); reject(new Error('请求超时')) })
+      req.on('timeout', () => { req.destroy(); reject(new Error('请求超时（网络较慢，请稍后重试）')) })
     })
 
     // 提取有 win64 下载的稳定版，按大版本去重，取最新 20 个大版本

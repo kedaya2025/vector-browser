@@ -1,6 +1,6 @@
 {
   "name": "vector-browser",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Vector Browser - Browser environment management tool",
   "main": "electron/main.js",
   "author": "",

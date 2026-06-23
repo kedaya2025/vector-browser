@@ -253,6 +253,18 @@
                       style="width: 424px; margin-left: 10px"
                     />
                   </el-form-item>
+                  <el-form-item label="代理类型">
+                    <el-select v-model="form.proxyType" placeholder="请选择">
+                      <el-option label="默认" value="默认" />
+                      <el-option label="不使用代理" value="不使用代理" />
+                      <el-option label="HTTP" value="HTTP" />
+                      <el-option label="HTTPS" value="HTTPS" />
+                      <el-option label="SOCKS5" value="SOCKS5" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="代理API链接">
+                    <el-input v-model="form.proxyAPI" placeholder="请输入" />
+                  </el-form-item>
                 </div>
               </el-timeline-item>
               <el-timeline-item>
@@ -1189,6 +1201,8 @@ export default {
         os: 'Win 11',
         chrome_version: '',
         ipQuerySource: '',
+        proxyType: '默认',
+        proxyAPI: '',
         proxy: {
           mode: 0,
           value: '',
@@ -1338,6 +1352,17 @@ export default {
       this.$refs['dataForm'].validate(async (valid, result) => {
         if (valid) {
           this.form.timestamp = Date.now()
+          if (this.form.proxyAPI) {
+            this.form.proxy.API = this.form.proxyAPI
+            this.form.proxy.protocol = this.form.proxyType
+            this.form.proxy.mode = 2
+          }
+          if (this.form.proxyType === '默认') {
+            this.form.proxy.mode = 0
+          }
+          if (this.form.proxyType === '不使用代理') {
+            this.form.proxy.mode = 1
+          }
           this.preProcessData(this.form)
           await addBrowser(this.form, this.$t('browser.browser'))
 

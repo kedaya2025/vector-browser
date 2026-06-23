@@ -14,7 +14,7 @@
     "svgo": "svgo -f src/icons/svg --config=src/icons/svgo.yml",
     "kill:running-apps": "node scripts/kill-running-apps.js",
     "electron:dev": "concurrently \"vue-cli-service serve\" \"wait-on http://localhost:9527 && electron .\"",
-    "electron:build": "npm run kill:running-apps && npm run build && electron-builder --dir",
+    "electron:build": "npm run kill:running-apps && npm run build && electron-builder --dir && node scripts/fix-icons.js",
     "fix:icons": "node scripts/fix-icons.js",
     "dist": "npm run kill:running-apps && npm run build && electron-builder --win nsis && node scripts/fix-icons.js"
   },
